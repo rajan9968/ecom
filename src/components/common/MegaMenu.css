@@ -1,13 +1,14 @@
-/* Mega Menu Stylesheet - Pure Bootstrap Structure & Separate CSS */
+/* Mega Menu Stylesheet - Compact Width, Modern Boutique Aesthetic */
 
 .mega-menu-backdrop {
   position: fixed;
-  top: 76px;
+  top: 72px;
   left: 0;
   right: 0;
   bottom: 0;
   opacity: 0;
   pointer-events: none;
+  /* background-color: rgba(0, 0, 0, 0.08); */
   transition: opacity 0.2s ease;
   z-index: 90;
 }
@@ -17,81 +18,150 @@
   pointer-events: auto;
 }
 
+/* Compact Mega Menu Container (Reduced width: max 640px) */
 .mega-menu-dropdown {
   position: absolute;
   top: 100%;
-  left: 0;
-  width: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  width: 92%;
+  max-width: 640px;
   background-color: #FFFFFF;
-  border-top: 1px solid #ECE7E1;
-  border-bottom: 1px solid #E8E2DD;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid #ECE7E1;
+  border-radius: 12px;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.04);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-6px);
-  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
-              transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
-              visibility 0.22s ease;
-  z-index: 100;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0.2s ease;
+  z-index: 120;
   pointer-events: none;
-  max-height: calc(100vh - 84px);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .mega-menu-dropdown.show {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
   pointer-events: auto;
 }
 
 /* Headings */
 .mega-menu-heading {
   font-family: var(--font-sans);
-  font-size: 1.02rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: #1F1F1F;
   letter-spacing: -0.01em;
   margin-bottom: 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #F0ECE7;
+  text-transform: uppercase;
 }
 
-/* Links */
+/* Submenu Lists */
+.mega-dynamic-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mega-dynamic-item {
+  position: relative;
+}
+
 .mega-menu-link {
   font-family: var(--font-sans);
-  font-size: 0.93rem;
-  color: #55514E;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #4A4A4A;
   text-decoration: none;
-  line-height: 1.5;
-  display: inline-block;
-  padding: 2px 0;
-  transition: color 0.18s ease, transform 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.16s ease;
 }
 
 .mega-menu-link:hover {
-  color: #C5705D;
-  transform: translateX(4px);
+  background-color: #FDF5F3;
+  color: #BA6C5A;
+  padding-left: 16px;
 }
 
-/* Vertical column dividers for desktop */
-@media (min-width: 992px) {
-  .mega-menu-column.with-divider {
-    border-left: 1px solid #EDE8E2;
-    padding-left: 2rem;
-  }
+.mega-sub-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background-color: #FDF5F3;
+  color: #BA6C5A;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(186, 108, 90, 0.25);
+  text-transform: uppercase;
 }
 
-/* Promo Card */
+.mega-menu-link:hover .mega-sub-badge {
+  background-color: #BA6C5A;
+  color: #FFFFFF;
+}
+
+.mega-sub-nested-list {
+  list-style: none;
+  padding: 4px 0 4px 16px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mega-nested-link {
+  font-size: 0.82rem;
+  color: #777777;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: block;
+  transition: all 0.15s ease;
+}
+
+.mega-nested-link:hover {
+  color: #BA6C5A;
+  background-color: #FDF5F3;
+}
+
+.mega-view-all-link {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #BA6C5A;
+  text-decoration: none;
+  margin-top: 14px;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.mega-view-all-link:hover {
+  color: #8C4736;
+  transform: translateX(3px);
+}
+
+/* Compact Promo Card */
 .mega-menu-promo-card {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 340px;
+  min-height: 200px;
   background-color: #F5EBE6;
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
   display: block;
   text-decoration: none;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .mega-menu-promo-img {
@@ -101,40 +171,52 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.4s ease;
 }
 
 .mega-menu-promo-card:hover .mega-menu-promo-img {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
 .mega-menu-promo-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0) 40%);
-  pointer-events: none;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.15) 60%, rgba(0, 0, 0, 0) 100%);
+}
+
+.mega-menu-promo-content {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mega-promo-tag {
+  color: #FFFFFF;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .mega-menu-promo-btn {
-  position: absolute;
-  bottom: 22px;
-  left: 22px;
-  background-color: #F4C4B5;
+  background-color: #EAAFA0;
   color: #1F1F1F;
   font-family: var(--font-sans);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 9px 18px;
+  letter-spacing: 0.06em;
+  padding: 7px 14px;
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
   text-transform: uppercase;
+  align-self: flex-start;
   transition: background-color 0.2s ease, transform 0.2s ease;
-  display: inline-block;
 }
 
 .mega-menu-promo-card:hover .mega-menu-promo-btn {
-  background-color: #EAAFA0;
+  background-color: #F4C4B5;
   transform: translateY(-2px);
 }

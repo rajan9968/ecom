@@ -1,8 +1,34 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './MegaMenu.css';
 
-export function MegaMenu({ menuData, isOpen, onClose, onMouseEnter, onMouseLeave }) {
-  if (!menuData) return null;
+const PROMO_IMAGES = {
+  men: {
+    image: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=600&auto=format&fit=crop&q=80',
+    tagline: "Men's Essentials"
+  },
+  women: {
+    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop&q=80',
+    tagline: "Women's Collection"
+  },
+  kids: {
+    image: 'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=600&auto=format&fit=crop&q=80',
+    tagline: "Kids & Baby Collection"
+  }
+};
+
+export function MegaMenu({ activeItem, isOpen, onClose, onMouseEnter, onMouseLeave }) {
+  if (!isOpen || !activeItem) return null;
+
+  const dynamicSubmenus = activeItem.submenus || [];
+  // Only render if there are submenus with value
+  if (dynamicSubmenus.length === 0) return null;
+
+  const key = (activeItem.label || '').toLowerCase();
+  const promoInfo = PROMO_IMAGES[key] || {
+    image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop&q=80',
+    tagline: `${activeItem.label} Collection`
+  };
 
   return (
     <>
@@ -13,67 +39,89 @@ export function MegaMenu({ menuData, isOpen, onClose, onMouseEnter, onMouseLeave
         aria-hidden="true"
       />
 
-      {/* Mega Menu Dropdown Container */}
+      {/* Compact Mega Menu Dropdown Container */}
       <div
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         className={`mega-menu-dropdown ${isOpen ? 'show' : ''}`}
         role="region"
-        aria-label={`${menuData.label} navigation menu`}
+        aria-label={`${activeItem.label} navigation menu`}
       >
-        <div className="container py-4 px-3 px-lg-4">
-          <div className="row g-4 align-items-stretch">
-            {/* Columns 1, 2, 3 */}
-            {menuData.columns.map((column, colIdx) => (
-              <div 
-                key={colIdx} 
-                className={`col-12 col-sm-6 col-lg-3 mega-menu-column ${colIdx > 0 ? 'with-divider' : ''}`}
-              >
-                <div className="d-flex flex-column gap-4">
-                  {column.sections.map((section, secIdx) => (
-                    <div key={secIdx}>
-                      <h4 className="mega-menu-heading">
-                        {section.title}
-                      </h4>
-                      <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
-                        {section.items.map((item, itemIdx) => (
-                          <li key={itemIdx}>
-                            <a
-                              href={item.href}
-                              onClick={onClose}
-                              className="mega-menu-link"
-                            >
-                              {item.label}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+        <div className="p-3 p-md-4">
+          <div className="row g-3 align-items-stretch">
+            {/* Left Column: ONLY Database Submenus (No default columns) */}
+            <div className="col-12 col-md-7 d-flex flex-column justify-content-between">
+              <div>
+                <h4 className="mega-menu-heading">
+                  {activeItem.label}
+                </h4>
+                <ul className="mega-dynamic-list">
+                  {dynamicSubmenus.map((sub) => (
+                    <li key={sub.id} className="mega-dynamic-item">
+                      <Link
+                        to={sub.url || '/collections'}
+                        onClick={onClose}
+                        className="mega-menu-link"
+                      >
+                        <span>{sub.title}</span>
+                        {sub.badge && (
+                          <span className="mega-sub-badge">{sub.badge}</span>
+                        )}
+                      </Link>
 
-            {/* Column 4: Promotional Image Banner */}
-            {menuData.promo && (
-              <div className="col-12 col-sm-6 col-lg-3 d-flex flex-column">
-                <a
-                  href={menuData.promo.ctaLink}
-                  onClick={onClose}
-                  className="mega-menu-promo-card"
-                >
-                  <img
-                    src={menuData.promo.image}
-                    alt={menuData.promo.alt}
-                    className="mega-menu-promo-img"
-                  />
-                  <div className="mega-menu-promo-overlay" />
-                  <span className="mega-menu-promo-btn">
-                    {menuData.promo.ctaText}
-                  </span>
-                </a>
+                      {/* 3rd level submenus if present */}
+                      {sub.submenus && sub.submenus.length > 0 && (
+                        <ul className="mega-sub-nested-list">
+                          {sub.submenus.map((nested) => (
+                            <li key={nested.id}>
+                              <Link
+                                to={nested.url || '/collections'}
+                                onClick={onClose}
+                                className="mega-nested-link"
+                              >
+                                {nested.title}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            )}
+
+              <div>
+                <Link
+                  to={activeItem.href || '/collections'}
+                  onClick={onClose}
+                  className="mega-view-all-link"
+                >
+                  View All {activeItem.label} &rarr;
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Column: Collection Banner */}
+            <div className="col-12 col-md-5 d-flex flex-column">
+              <Link
+                to={activeItem.href || '/collections'}
+                onClick={onClose}
+                className="mega-menu-promo-card"
+              >
+                <img
+                  src={promoInfo.image}
+                  alt={activeItem.label}
+                  className="mega-menu-promo-img"
+                />
+                <div className="mega-menu-promo-overlay" />
+                <div className="mega-menu-promo-content">
+                  <span className="mega-promo-tag">{promoInfo.tagline}</span>
+                  <span className="mega-menu-promo-btn">
+                    EXPLORE {activeItem.label.toUpperCase()}
+                  </span>
+                </div>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

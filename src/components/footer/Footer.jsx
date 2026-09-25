@@ -1,7 +1,31 @@
-import React from 'react';
-import { Instagram, Facebook, Mail } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Instagram, Facebook, Twitter, Mail, Phone, MapPin } from 'lucide-react';
 
 export function Footer() {
+  const [settings, setSettings] = useState({
+    site_name: 'Their Nibs London',
+    email: 'support@theirnibs.com',
+    phone: '+44 (0) 20 8123 4567',
+    address: 'Studio 14, The Light Box, 111 Power Road, London, W4 5PY, United Kingdom',
+    city: 'London',
+    country: 'United Kingdom',
+    facebook: 'https://facebook.com/theirnibs',
+    instagram: 'https://instagram.com/theirnibs',
+    twitter: 'https://twitter.com/theirnibs',
+    copyright_text: '© 2026 Their Nibs London. All Rights Reserved.'
+  });
+
+  useEffect(() => {
+    fetch('http://localhost:5001/api/settings')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && json.data) {
+          setSettings(json.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <footer style={{
       backgroundColor: '#F3BCA8',
@@ -11,7 +35,7 @@ export function Footer() {
       <div className="container">
         {/* Top Columns */}
         <div className="row g-4 mb-4 justify-content-between">
-          {/* Col 1: About Us (Half width on mobile) */}
+          {/* Col 1: About Us */}
           <div className="col-6 col-md-3">
             <h4 style={{
               fontFamily: 'var(--font-sans)',
@@ -30,11 +54,11 @@ export function Footer() {
               <li><a href="#brand-story" style={{ fontSize: '0.84rem', color: '#1F1F1F', textDecoration: 'none' }}>As Seen On</a></li>
               <li><a href="#featured-products" style={{ fontSize: '0.84rem', color: '#1F1F1F', textDecoration: 'none' }}>Collaborations</a></li>
               <li><a href="#brand-story" style={{ fontSize: '0.84rem', color: '#1F1F1F', textDecoration: 'none' }}>Careers</a></li>
-              <li><a href="mailto:wholesale@theirnibs.com" style={{ fontSize: '0.84rem', color: '#1F1F1F', textDecoration: 'none' }}>Wholesale</a></li>
+              <li><a href={`mailto:${settings.email}`} style={{ fontSize: '0.84rem', color: '#1F1F1F', textDecoration: 'none' }}>Wholesale</a></li>
             </ul>
           </div>
 
-          {/* Col 2: Customer Care (Half width on mobile) */}
+          {/* Col 2: Customer Care */}
           <div className="col-6 col-md-3">
             <h4 style={{
               fontFamily: 'var(--font-sans)',
@@ -57,7 +81,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Col 3: Get In Touch */}
+          {/* Col 3: Get In Touch (Dynamic settings from MySQL) */}
           <div className="col-12 col-md-5 mt-2 mt-md-0">
             <h4 style={{
               fontFamily: 'var(--font-sans)',
@@ -70,24 +94,57 @@ export function Footer() {
             }}>
               GET IN TOUCH
             </h4>
-            <p style={{ fontSize: '0.84rem', lineHeight: '1.5', marginBottom: '10px', color: '#1F1F1F' }}>
-              Need help? Our customer care team is here for you Monday &ndash; Friday 9am&ndash;5pm.
-            </p>
-            <p style={{ fontSize: '0.86rem', fontWeight: '600', marginBottom: '16px' }}>
-              <a href="mailto:help@theirnibs.com" style={{ textDecoration: 'underline', color: '#1F1F1F' }}>help@theirnibs.com</a>
-            </p>
 
-            {/* Social Icons & Feefo */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
-              <a href="https://instagram.com/theirnibs" target="_blank" rel="noreferrer" style={{ color: '#1F1F1F' }}>
-                <Instagram size={20} />
-              </a>
-              <a href="https://facebook.com/theirnibs" target="_blank" rel="noreferrer" style={{ color: '#1F1F1F' }}>
-                <Facebook size={20} />
-              </a>
-              <a href="mailto:help@theirnibs.com" style={{ color: '#1F1F1F' }}>
-                <Mail size={20} />
-              </a>
+            {settings.address && (
+              <p style={{ fontSize: '0.84rem', lineHeight: '1.45', marginBottom: '10px', color: '#1F1F1F', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <MapPin size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <span>{settings.address}</span>
+              </p>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+              {settings.email && (
+                <a 
+                  href={`mailto:${settings.email}`} 
+                  style={{ fontSize: '0.86rem', fontWeight: '600', color: '#1F1F1F', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Mail size={15} />
+                  <span>{settings.email}</span>
+                </a>
+              )}
+              {settings.phone && (
+                <a 
+                  href={`tel:${settings.phone.replace(/[^0-9+]/g, '')}`} 
+                  style={{ fontSize: '0.84rem', color: '#1F1F1F', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Phone size={15} />
+                  <span>{settings.phone}</span>
+                </a>
+              )}
+            </div>
+
+            {/* Dynamic Social Media Icons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
+              {settings.instagram && (
+                <a href={settings.instagram} target="_blank" rel="noreferrer" style={{ color: '#1F1F1F' }} title="Follow us on Instagram">
+                  <Instagram size={20} />
+                </a>
+              )}
+              {settings.facebook && (
+                <a href={settings.facebook} target="_blank" rel="noreferrer" style={{ color: '#1F1F1F' }} title="Follow us on Facebook">
+                  <Facebook size={20} />
+                </a>
+              )}
+              {settings.twitter && (
+                <a href={settings.twitter} target="_blank" rel="noreferrer" style={{ color: '#1F1F1F' }} title="Follow us on Twitter / X">
+                  <Twitter size={20} />
+                </a>
+              )}
+              {settings.email && (
+                <a href={`mailto:${settings.email}`} style={{ color: '#1F1F1F' }} title="Email us directly">
+                  <Mail size={20} />
+                </a>
+              )}
             </div>
 
             <img 
@@ -98,7 +155,7 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
+        {/* Bottom Bar with Dynamic Copyright */}
         <div style={{
           paddingTop: '20px',
           borderTop: '1px solid rgba(31, 31, 31, 0.15)',
@@ -110,7 +167,7 @@ export function Footer() {
           fontSize: '0.74rem'
         }}>
           <div>
-            <span>&copy; {new Date().getFullYear()}, Their Nibs London</span>
+            <span>{settings.copyright_text || `© ${new Date().getFullYear()} ${settings.site_name}. All Rights Reserved.`}</span>
           </div>
 
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', fontWeight: '600' }}>

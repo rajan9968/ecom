@@ -1,29 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
 import { X, ChevronDown } from 'lucide-react';
-import { MEGA_MENU_DATA } from '../../data/megaMenuData.js';
 import './MobileNav.css';
 
 export function MobileNav({ isOpen, onClose }) {
   const { currency, setCurrency, allCurrencies } = useCurrency();
   const [expandedMenu, setExpandedMenu] = useState(null);
+  const [navItems, setNavItems] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:5001/api/menu')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && Array.isArray(json.data)) {
+          const dynamicItems = json.data.map(item => ({
+            id: item.id,
+            label: item.title,
+            href: item.url || '/',
+            submenus: item.submenus || []
+          }));
+          setNavItems(dynamicItems);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   if (!isOpen) return null;
 
   const toggleExpand = (menuId) => {
     setExpandedMenu(prev => (prev === menuId ? null : menuId));
   };
-
-  const navItems = [
-    { label: 'Sophie Ellis-Bextor Collaboration', href: '#featured-products' },
-    { label: 'Halloween', href: '#featured-products' },
-    { label: 'New In', href: '#featured-products', menuId: 'new-in' },
-    { label: 'Womens', href: '#featured-products', menuId: 'womens' },
-    { label: 'Mens', href: '#mens-section', menuId: 'mens' },
-    { label: 'Kids', href: '#kids-section', menuId: 'kids' },
-    { label: 'Accessories', href: '#featured-products', menuId: 'accessories' },
-    { label: 'Gifting', href: '#featured-products', menuId: 'gifting' }
-  ];
 
   return (
     <div className="position-fixed inset-0" style={{ top: 0, left: 0, right: 0, bottom: 0, zIndex: 300 }}>
@@ -51,14 +57,15 @@ export function MobileNav({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Navigation Items with Expandable Submenus */}
+        {/* Navigation Items with Expandable Submenus (Only for items that actually have submenus) */}
         <nav className="flex-grow-1 overflow-y-auto d-flex flex-column">
           {navItems.map((item, idx) => {
-            const mega = item.menuId ? MEGA_MENU_DATA[item.menuId] : null;
-            const isExpanded = expandedMenu === item.menuId;
+            const dynamicSubs = item.submenus || [];
+            const hasChildren = dynamicSubs.length > 0;
+            const isExpanded = expandedMenu === item.id;
 
             return (
-              <div key={idx} className="mobile-nav-item">
+              <div key={item.id || idx} className="mobile-nav-item">
                 <div className="mobile-nav-row">
                   <a
                     href={item.href}
@@ -68,9 +75,9 @@ export function MobileNav({ isOpen, onClose }) {
                     {item.label}
                   </a>
 
-                  {mega && (
+                  {hasChildren && (
                     <button
-                      onClick={() => toggleExpand(item.menuId)}
+                      onClick={() => toggleExpand(item.id)}
                       aria-label={`Toggle ${item.label} submenu`}
                       className="mobile-nav-toggle-btn"
                     >
@@ -85,32 +92,44 @@ export function MobileNav({ isOpen, onClose }) {
                   )}
                 </div>
 
-                {/* Submenu Accordion */}
-                {mega && isExpanded && (
+                {/* Submenu Accordion - ONLY rendered if hasChildren */}
+                {hasChildren && isExpanded && (
                   <div className="mobile-nav-accordion">
-                    {mega.columns.map((col, cIdx) => (
-                      <div key={cIdx} className="d-flex flex-column gap-2">
-                        {col.sections.map((sec, sIdx) => (
-                          <div key={sIdx}>
-                            <p className="mobile-nav-section-title">
-                              {sec.title}
-                            </p>
-                            <div className="d-flex flex-column gap-1">
-                              {sec.items.map((sub, subIdx) => (
+                    <div className="d-flex flex-column gap-1">
+                      {dynamicSubs.map((sub) => (
+                        <div key={sub.id} className="d-flex flex-column">
+                          <a
+                            href={sub.url || '/collections'}
+                            onClick={onClose}
+                            className="mobile-nav-sublink d-flex align-items-center justify-content-between"
+                          >
+                            <span>{sub.title}</span>
+                            {sub.badge && (
+                              <span className="badge rounded-pill bg-light text-dark px-2 py-1" style={{ fontSize: '0.62rem' }}>
+                                {sub.badge}
+                              </span>
+                            )}
+                          </a>
+
+                          {/* 3rd level submenus if present */}
+                          {sub.submenus && sub.submenus.length > 0 && (
+                            <div className="ps-3 d-flex flex-column gap-1">
+                              {sub.submenus.map((nested) => (
                                 <a
-                                  key={subIdx}
-                                  href={sub.href}
+                                  key={nested.id}
+                                  href={nested.url || '/collections'}
                                   onClick={onClose}
-                                  className="mobile-nav-sublink"
+                                  className="mobile-nav-sublink text-muted"
+                                  style={{ fontSize: '0.8rem' }}
                                 >
-                                  {sub.label}
+                                  {nested.title}
                                 </a>
                               ))}
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

@@ -1,0 +1,636 @@
+/* ============================================================
+   PRODUCT LISTING PAGE (PLP) STYLESHEET
+   100% Matching Boutique Aesthetic with Theme rgb(234, 175, 160)
+   ============================================================ */
+
+.plp-page-wrapper {
+  background-color: #FFFFFF;
+  color: #1F1F1F;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+}
+
+/* Category Header & Breadcrumbs */
+.plp-header-banner {
+  padding: 24px 0 20px 0;
+  border-bottom: 1px solid #ECEEF1;
+  background-color: #FAFAFA;
+}
+
+.plp-breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #6B7280;
+  margin: 0 0 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plp-breadcrumb-link {
+  color: #6B7280;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.plp-breadcrumb-link:hover {
+  color: #111827;
+  text-decoration: underline;
+}
+
+.plp-breadcrumb-sep {
+  color: #D1D5DB;
+  font-size: 0.7rem;
+}
+
+.plp-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.plp-page-title {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: clamp(1.6rem, 2.8vw, 2.3rem);
+  font-weight: 700;
+  color: #1F1F1F;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.plp-product-count-badge {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+/* Filter & Sort Bar */
+.plp-toolbar-container {
+  padding: 16px 0;
+  border-bottom: 1px solid #ECEEF1;
+  background-color: #FFFFFF;
+  position: sticky;
+  top: 75px;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.plp-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* Filter Dropdown Buttons */
+.plp-filters-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.plp-filter-pill-btn {
+  background-color: #F8F9FA;
+  border: 1px solid #E5E7EB;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.plp-filter-pill-btn:hover {
+  background-color: #FDF6F4;
+  border-color: #BA6C5A;
+  color: #8E3E2F;
+}
+
+.plp-filter-pill-btn.active {
+  background-color: #FDF6F4;
+  border-color: #BA6C5A;
+  color: #8E3E2F;
+}
+
+/* Sort & View Options */
+.plp-sort-view-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.plp-sort-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4B5563;
+}
+
+.plp-sort-select {
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1F1F1F;
+  background-color: #FFFFFF;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.plp-sort-select:focus {
+  border-color: #BA6C5A;
+}
+
+/* Grid Column Switcher */
+.plp-grid-switcher {
+  display: flex;
+  align-items: center;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.plp-grid-toggle-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  color: #9CA3AF;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.plp-grid-toggle-btn.active {
+  background-color: #F3F4F6;
+  color: #111827;
+}
+
+/* Active Filter Tags Row */
+.plp-active-filters-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.plp-active-tag {
+  background-color: #FDF6F4;
+  border: 1px solid #F6DDD6;
+  color: #8E3E2F;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plp-tag-remove-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.plp-clear-all-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6B7280;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.plp-clear-all-btn:hover {
+  color: #DC2626;
+}
+
+/* ============================================================
+   PRODUCT CARDS GRID (4 COLUMNS EXACT REPLICA)
+   ============================================================ */
+.plp-grid-section {
+  padding: 36px 0 60px 0;
+}
+
+.plp-product-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  transition: transform 0.25s ease;
+}
+
+.plp-product-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Image & Overlay Area */
+.plp-card-media-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background-color: #F8F9FA;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.plp-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.plp-card-media-wrap:hover .plp-card-img {
+  transform: scale(1.04);
+}
+
+/* Badges */
+.plp-badge-new {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #1F1F1F;
+  color: #FFFFFF;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.plp-badge-bestseller {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #BA6C5A;
+  color: #FFFFFF;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+/* Sophie Collaboration Stamp */
+.plp-sophie-stamp {
+  position: absolute;
+  top: 10px;
+  right: 48px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(197, 112, 93, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.plp-sophie-stamp-brand {
+  font-family: var(--font-serif, Georgia, serif);
+  font-style: italic;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #BA6C5A;
+}
+
+.plp-sophie-stamp-label {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: #1F1F1F;
+  line-height: 1;
+}
+
+/* Wishlist Heart Button */
+.plp-heart-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.plp-heart-btn:hover {
+  background-color: #FFFFFF;
+  transform: scale(1.1);
+}
+
+/* Hover Quick Size Bar (Desktop) */
+.plp-hover-sizes-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  padding: 8px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: all 0.25s ease;
+  z-index: 4;
+}
+
+.plp-card-media-wrap:hover .plp-hover-sizes-bar {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.plp-size-quick-btn {
+  border: 1px solid #D1D5DB;
+  background-color: #FFFFFF;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.plp-size-quick-btn:hover {
+  background-color: #BA6C5A;
+  border-color: #BA6C5A;
+  color: #FFFFFF;
+}
+
+/* Card Details (Title & Price) */
+.plp-card-info {
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.plp-card-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #1F1F1F;
+  margin: 0 0 6px 0;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.plp-card-title:hover {
+  color: #BA6C5A;
+}
+
+.plp-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  color: #6B7280;
+  margin-bottom: 6px;
+}
+
+.plp-card-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.plp-card-price {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.plp-card-quick-add-link {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #BA6C5A;
+  text-decoration: underline;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.plp-card-quick-add-link:hover {
+  color: #9F5444;
+}
+
+/* ============================================================
+   PAGINATION CONTROLS (Requested by User)
+   ============================================================ */
+.plp-pagination-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 0 20px 0;
+  border-top: 1px solid #ECEEF1;
+  margin-top: 20px;
+}
+
+.plp-pagination-summary {
+  font-size: 0.82rem;
+  color: #6B7280;
+  margin-bottom: 12px;
+}
+
+/* Visual Progress Bar */
+.plp-pagination-progress-track {
+  width: 100%;
+  max-width: 220px;
+  height: 4px;
+  background-color: #E5E7EB;
+  border-radius: 999px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.plp-pagination-progress-fill {
+  height: 100%;
+  background-color: #BA6C5A;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* Page Numbers Row */
+.plp-pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.plp-page-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #E5E7EB;
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.plp-page-nav-btn:hover:not(:disabled) {
+  border-color: #BA6C5A;
+  color: #BA6C5A;
+  background-color: #FDF6F4;
+}
+
+.plp-page-nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: #E5E7EB;
+}
+
+.plp-page-number-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  background-color: #FFFFFF;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.plp-page-number-btn:hover {
+  border-color: #BA6C5A;
+  color: #BA6C5A;
+  background-color: #FDF6F4;
+}
+
+.plp-page-number-btn.active {
+  background-color: rgb(234, 175, 160);
+  border-color: #BA6C5A;
+  color: #1A1A1A;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(234, 175, 160, 0.4);
+}
+
+.plp-page-ellipsis {
+  padding: 0 4px;
+  color: #9CA3AF;
+  font-weight: 600;
+}
+
+/* Filter Dropdown Modal/Popovers */
+.plp-filter-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  min-width: 220px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plp-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #374151;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.plp-popover-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #BA6C5A;
+}
+
+/* Empty State */
+.plp-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6B7280;
+}
+
+.plp-empty-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .plp-hover-sizes-bar {
+    display: none;
+  }
+
+  .plp-page-number-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 0.78rem;
+  }
+
+  .plp-page-nav-btn {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+}

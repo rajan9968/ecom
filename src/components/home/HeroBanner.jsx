@@ -1,15 +1,16 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Slider from 'react-slick';
 import { gsap } from '../../utils/animations.jsx';
 import './HeroBanner.css';
 
-const SLIDES = [
+const DEFAULT_SLIDES = [
   {
     id: 'pyjama-sets',
     title: "Women's Pyjama Sets",
     subtitle: "Shop New In Nightwear",
     ctaText: "SHOP NOW",
     ctaLink: "#featured-products",
+    badge: "NEW IN",
     image: "https://www.theirnibs.com/cdn/shop/files/Screenshot_2026-07-14_at_15.14.40.png",
     alt: "Women's Pyjama Sets"
   },
@@ -19,6 +20,7 @@ const SLIDES = [
     subtitle: "Effortless lightweight cotton & elegant hand-painted floral prints",
     ctaText: "SHOP ROBES",
     ctaLink: "#featured-products",
+    badge: "SIGNATURE",
     image: "https://www.theirnibs.com/cdn/shop/files/Wisteria_Robe_Hero_banner.jpg",
     alt: "Dressing Gowns & Robes"
   },
@@ -28,6 +30,7 @@ const SLIDES = [
     subtitle: "Exclusive Disco Glamour & Playful Hand-Drawn Vintage Prints",
     ctaText: "DISCOVER THE COLLAB",
     ctaLink: "#featured-products",
+    badge: "LIMITED EDITION",
     image: "https://www.theirnibs.com/cdn/shop/files/Transitional_new_In.jpg",
     alt: "Their Nibs x Sophie Ellis-Bextor Collaboration"
   }
@@ -36,6 +39,35 @@ const SLIDES = [
 export function HeroBanner() {
   const sliderRef = useRef(null);
   const containerRef = useRef(null);
+  const [slides, setSlides] = useState(DEFAULT_SLIDES);
+
+  // Fetch dynamic hero banners from MySQL backend
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const res = await fetch('http://localhost:5001/api/banners?status=active');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const mapped = json.data.map(item => ({
+            id: item.id,
+            title: item.title,
+            subtitle: item.subtitle,
+            ctaText: item.cta_text || 'SHOP NOW',
+            ctaLink: item.cta_link || '#featured-products',
+            badge: item.badge || null,
+            image: item.image_url,
+            alt: item.title
+          }));
+          setSlides(mapped);
+        }
+      } catch (err) {
+        console.log('Using default hero banners:', err.message);
+      }
+    };
+
+    fetchBanners();
+  }, []);
+
 
   // Trigger smooth GSAP reveal for the current active slide
   const animateSlide = () => {
@@ -112,13 +144,13 @@ export function HeroBanner() {
   return (
     <section ref={containerRef} className="hero-slider-section w-100">
       <Slider ref={sliderRef} {...settings} className="hero-slick-slider">
-        {SLIDES.map((slide) => (
+        {slides.map((slide) => (
           <div key={slide.id} className="hero-slide-wrapper">
             <div className="hero-slide-item">
               {/* Background Full-Bleed Image */}
               <img 
                 src={slide.image} 
-                alt={slide.alt}
+                alt={slide.alt || slide.title}
                 className="hero-bg-image"
               />
 
@@ -127,6 +159,26 @@ export function HeroBanner() {
 
               {/* Centered Typography & CTA */}
               <div className="hero-content">
+                {/* Optional Badge */}
+                {slide.badge && (
+                  <div className="hero-fade-item mb-2">
+                    <span style={{
+                      display: 'inline-block',
+                      backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                      color: '#1E2328',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      padding: '4px 12px',
+                      borderRadius: '999px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
+                    }}>
+                      {slide.badge}
+                    </span>
+                  </div>
+                )}
+
                 {/* Hero Title */}
                 <h1 className="hero-title">
                   {slide.title.split(' ').map((word, wIdx) => (

@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Slider from 'react-slick';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
@@ -130,6 +131,7 @@ const CATALOG_DATA = {
 };
 
 export function ProductRow() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('new-in');
   const sliderRef = useRef(null);
   const { addToCart } = useCart();
@@ -234,7 +236,11 @@ export function ProductRow() {
 
             return (
               <div key={item.id}>
-                <div className="product-card-interactive">
+                <div 
+                  className="product-card-interactive"
+                  onClick={() => navigate(`/product/${item.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
                   {/* Image Container with Hover Size Bar */}
                   <div className="card-media-wrap">
                     <img 

@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
 import { Search, Heart, ShoppingBag, User, Menu, ChevronDown } from 'lucide-react';
 import { MegaMenu } from './MegaMenu.jsx';
-import { MEGA_MENU_DATA } from '../../data/megaMenuData.js';
 import './Header.css';
 
-export function Header({ onOpenSearch, onOpenMobileNav }) {
+export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
   const { totalCount, setIsCartOpen } = useCart();
   const { wishlistCount } = useWishlist();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [activeMenuId, setActiveMenuId] = useState(null);
+  const [activeItem, setActiveItem] = useState(null);
   const closeTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -25,29 +25,30 @@ export function Header({ onOpenSearch, onOpenMobileNav }) {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        setActiveMenuId(null);
+        setActiveItem(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleMouseEnterItem = (menuId) => {
+  const handleMouseEnterItem = (item) => {
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
-    if (menuId && MEGA_MENU_DATA[menuId]) {
-      setActiveMenuId(menuId);
+    // Only open if this menu actually has submenus with value!
+    if (item && Array.isArray(item.submenus) && item.submenus.length > 0) {
+      setActiveItem(item);
     } else {
-      setActiveMenuId(null);
+      setActiveItem(null);
     }
   };
 
   const handleMouseLeaveItem = () => {
     closeTimeoutRef.current = setTimeout(() => {
-      setActiveMenuId(null);
-    }, 180);
+      setActiveItem(null);
+    }, 200);
   };
 
   const handleMouseEnterMenu = () => {
@@ -59,20 +60,47 @@ export function Header({ onOpenSearch, onOpenMobileNav }) {
 
   const handleMouseLeaveMenu = () => {
     closeTimeoutRef.current = setTimeout(() => {
-      setActiveMenuId(null);
-    }, 180);
+      setActiveItem(null);
+    }, 200);
   };
 
-  const navItems = [
-    { label: 'Sophie Ellis-Bextor Collaboration', href: '#featured-products', hasMega: false },
-    { label: 'Halloween', href: '#featured-products', hasMega: false },
-    { label: 'New In', href: '#featured-products', hasMega: true, menuId: 'new-in' },
-    { label: 'Womens', href: '#featured-products', hasMega: true, menuId: 'womens' },
-    { label: 'Mens', href: '#mens-section', hasMega: true, menuId: 'mens' },
-    { label: 'Kids', href: '#kids-section', hasMega: true, menuId: 'kids' },
-    { label: 'Accessories', href: '#featured-products', hasMega: true, menuId: 'accessories' },
-    { label: 'Gifting', href: '#featured-products', hasMega: true, menuId: 'gifting' }
-  ];
+  // Dynamic navigation items fetched directly from MySQL database API (no hardcoded default menus)
+  const [navItems, setNavItems] = useState([]);
+  const [logoUrl, setLogoUrl] = useState('https://www.theirnibs.com/cdn/shop/files/TheirNibs_Logo_Navy_Wide.png');
+
+  // Fetch dynamic website menu tree and site settings from MySQL backend API
+  useEffect(() => {
+    fetch('http://localhost:5001/api/menu')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && Array.isArray(json.data)) {
+          const dynamicItems = json.data.map(item => {
+            const hasSubmenus = Array.isArray(item.submenus) && item.submenus.length > 0;
+            return {
+              id: item.id,
+              label: item.title,
+              href: item.url || '/',
+              hasMega: hasSubmenus, // only true if item actually has submenus
+              badge: item.badge,
+              submenus: item.submenus || []
+            };
+          });
+          setNavItems(dynamicItems);
+        }
+      })
+      .catch(err => {
+        console.warn('Could not load navigation from API:', err.message);
+      });
+
+    fetch('http://localhost:5001/api/settings')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && json.data && json.data.logo_url) {
+          setLogoUrl(json.data.logo_url);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
@@ -87,33 +115,36 @@ export function Header({ onOpenSearch, onOpenMobileNav }) {
             <Menu size={22} />
           </button>
 
-          <a href="#" className="d-flex align-items-center text-decoration-none">
+          <Link to="/" className="d-flex align-items-center text-decoration-none">
             <img 
-              src="https://www.theirnibs.com/cdn/shop/files/TheirNibs_Logo_Navy_Wide.png" 
-              alt="Their Nibs London"
+              src={logoUrl} 
+              alt="Store Logo"
               className="header-logo-img"
             />
-          </a>
+          </Link>
         </div>
 
-        {/* Center: Desktop Navigation - Hidden on mobile/tablet (d-none), visible on xl+ (d-xl-flex) */}
+        {/* Center: Desktop Navigation */}
         <nav className="desktop-nav d-none d-xl-flex align-items-center gap-3 gap-xxl-4 h-100">
           {navItems.map((item, idx) => {
-            const isActive = activeMenuId === item.menuId;
+            const isActive = activeItem?.id === item.id;
 
             return (
               <div
-                key={idx}
-                onMouseEnter={() => handleMouseEnterItem(item.menuId)}
+                key={item.id || idx}
+                onMouseEnter={() => handleMouseEnterItem(item)}
                 onMouseLeave={handleMouseLeaveItem}
                 className="desktop-nav-item"
               >
-                <a 
-                  href={item.href}
+                <Link 
+                  to={item.href}
                   className={`nav-item-link ${isActive ? 'active' : ''}`}
                 >
                   <span className="nav-link-text">
                     {item.label}
+                    {item.badge && (
+                      <span className="header-nav-badge">{item.badge}</span>
+                    )}
                     <span className="nav-link-underline" />
                   </span>
 
@@ -124,7 +155,7 @@ export function Header({ onOpenSearch, onOpenMobileNav }) {
                       className={`nav-chevron-icon ${isActive ? 'rotated' : ''}`}
                     />
                   )}
-                </a>
+                </Link>
               </div>
             );
           })}
@@ -154,8 +185,9 @@ export function Header({ onOpenSearch, onOpenMobileNav }) {
           </a>
 
           <button 
-            onClick={() => alert('Welcome to Their Nibs Client Portal. Please login or register to view your order history.')}
-            aria-label="Account"
+            onClick={onOpenAdmin || (() => alert('Welcome to Their Nibs Portal.'))}
+            aria-label="Account / Admin"
+            title="Open Admin Portal"
             className="header-action-btn desktop-account-btn d-none d-xl-flex"
           >
             <User size={20} />
@@ -174,12 +206,12 @@ export function Header({ onOpenSearch, onOpenMobileNav }) {
         </div>
       </div>
 
-      {/* Render the Mega Menu component (Desktop Only) */}
+      {/* Compact Mega Menu: ONLY rendered for items with actual database submenus */}
       <div className="d-none d-xl-block">
         <MegaMenu
-          menuData={activeMenuId ? MEGA_MENU_DATA[activeMenuId] : null}
-          isOpen={Boolean(activeMenuId && MEGA_MENU_DATA[activeMenuId])}
-          onClose={() => setActiveMenuId(null)}
+          activeItem={activeItem}
+          isOpen={Boolean(activeItem && activeItem.submenus && activeItem.submenus.length > 0)}
+          onClose={() => setActiveItem(null)}
           onMouseEnter={handleMouseEnterMenu}
           onMouseLeave={handleMouseLeaveMenu}
         />
@@ -187,3 +219,5 @@ export function Header({ onOpenSearch, onOpenMobileNav }) {
     </header>
   );
 }
+
+

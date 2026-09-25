@@ -89,6 +89,19 @@
   transform: scaleX(1);
 }
 
+.header-nav-badge {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  background-color: #BA6C5A;
+  color: #FFFFFF;
+  padding: 1px 5px;
+  border-radius: 999px;
+  margin-left: 5px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
 .nav-chevron-icon {
   transition: transform 0.22s ease;
   opacity: 0.75;
@@ -166,3 +179,5 @@
     padding: 4px;
   }
 }
+
+
