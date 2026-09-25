@@ -1,0 +1,111 @@
+/* Family Banners Stylesheet - Bootstrap & Separate Component CSS */
+
+.family-banners-section {
+  padding: 24px 0 54px;
+  background-color: #FFFFFF;
+  overflow: hidden;
+}
+
+.family-banner-card {
+  position: relative;
+  aspect-ratio: 1/1;
+  min-height: clamp(260px, 46vw, 440px);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+}
+
+.family-banner-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.family-banner-card:hover .family-banner-img {
+  transform: scale(1.04);
+}
+
+.family-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.family-banner-content {
+  position: relative;
+  z-index: 5;
+  color: #FFFFFF;
+  padding: 1.25rem;
+  max-width: 420px;
+}
+
+.family-banner-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 3.6vw, 2.9rem);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #FFFFFF;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.family-banner-desc {
+  font-size: 0.88rem;
+  margin-bottom: 1.25rem;
+  color: #FFFFFF;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+  line-height: 1.45;
+}
+
+.family-banner-btn {
+  display: inline-block;
+  background-color: #FFFFFF;
+  color: #1F1F1F;
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 11px 26px;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s ease;
+}
+
+.family-banner-btn:hover {
+  background-color: #F3BCA8;
+  color: #1F1F1F;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .family-banners-section {
+    padding: 18px 0 40px;
+  }
+
+  .family-banner-card {
+    min-height: 240px;
+  }
+
+  .family-banner-title {
+    font-size: clamp(1.65rem, 6vw, 2.2rem);
+  }
+
+  .family-banner-desc {
+    font-size: 0.82rem;
+    margin-bottom: 1rem;
+  }
+
+  .family-banner-btn {
+    padding: 10px 22px;
+    font-size: 0.72rem;
+  }
+}

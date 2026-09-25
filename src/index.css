@@ -1,0 +1,252 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Inter:wght@300;400;500;600&family=Jost:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
+@import './styles/variables.css';
+
+/* Custom Slick Slider overrides */
+.slick-slide {
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+.slick-prev, .slick-next {
+  width: 42px;
+  height: 42px;
+  background: #FFFFFF !important;
+  border-radius: 50% !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  z-index: 10;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.slick-prev:hover, .slick-next:hover {
+  transform: scale(1.08);
+  background: #FAF6F3 !important;
+}
+
+.slick-prev:before, .slick-next:before {
+  color: #1F1F1F !important;
+  font-size: 20px !important;
+  opacity: 0.9 !important;
+}
+
+.slick-prev {
+  left: -20px !important;
+}
+
+.slick-next {
+  right: -20px !important;
+}
+
+/* Hero Slick Slider specific styling */
+.hero-slick-slider .slick-slide {
+  padding: 0 !important;
+}
+
+.hero-slick-slider .slick-dots {
+  bottom: 28px !important;
+  z-index: 20 !important;
+}
+
+.hero-slick-slider .slick-dots li {
+  margin: 0 4px !important;
+}
+
+.hero-slick-slider .slick-dots li button:before {
+  font-size: 10px !important;
+  color: #FFFFFF !important;
+  opacity: 0.5 !important;
+}
+
+.hero-slick-slider .slick-dots li.slick-active button:before {
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+.hero-slick-slider .slick-prev,
+.hero-slick-slider .slick-next {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(8px);
+  z-index: 25 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+.hero-slick-slider .slick-prev:hover,
+.hero-slick-slider .slick-next:hover {
+  background: #FFFFFF !important;
+  transform: scale(1.1);
+}
+
+.hero-slick-slider .slick-prev {
+  left: 28px !important;
+}
+
+.hero-slick-slider .slick-next {
+  right: 28px !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  overflow-x: hidden;
+  position: relative;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: var(--transition-normal);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  color: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  color: inherit;
+  outline: none;
+  border: none;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(16px, 3.5vw, 48px);
+  padding-right: clamp(16px, 3.5vw, 48px);
+}
+
+/* Typography Helpers */
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.section-tag {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-accent-terracotta);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 3.8vw, 3.2rem);
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--color-text);
+  margin-bottom: 16px;
+}
+
+.section-subtitle {
+  font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 620px;
+}
+
+/* Boutique Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-accent-dark);
+  color: #FFFFFF;
+  padding: 14px 28px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: var(--transition-normal);
+  border: 1px solid var(--color-accent-dark);
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-terracotta);
+  border-color: var(--color-accent-terracotta);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(197, 112, 93, 0.25);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--color-text);
+  padding: 13px 26px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: var(--transition-normal);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-accent-dark);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 16px rgba(230, 176, 156, 0.8); }
+}

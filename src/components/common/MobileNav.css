@@ -1,0 +1,147 @@
+/* MobileNav Drawer Stylesheet */
+
+.mobile-nav-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+}
+
+.mobile-nav-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 86%;
+  max-width: 350px;
+  height: 100%;
+  background-color: #FFFFFF;
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px;
+  animation: slideDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 310;
+}
+
+@keyframes slideDrawer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.mobile-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #ECE7E1;
+}
+
+.mobile-nav-logo {
+  height: 28px;
+  width: auto;
+}
+
+.mobile-nav-close-btn {
+  padding: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #1F1F1F;
+}
+
+.mobile-nav-item {
+  border-bottom: 1px solid #F0ECE7;
+}
+
+.mobile-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 2px;
+}
+
+.mobile-nav-link {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1F1F1F;
+  text-decoration: none;
+  flex: 1;
+}
+
+.mobile-nav-toggle-btn {
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+
+.mobile-nav-accordion {
+  padding: 10px 14px 16px 14px;
+  background-color: #FAF6F3;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mobile-nav-section-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #8E8A86;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.mobile-nav-sublink {
+  font-size: 0.88rem;
+  color: #333;
+  text-decoration: none;
+  padding: 4px 0;
+  display: block;
+}
+
+.mobile-nav-sublink:hover {
+  color: #C5705D;
+}
+
+.mobile-nav-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #ECE7E1;
+}
+
+.mobile-nav-footer-label {
+  font-size: 0.75rem;
+  color: #8E8A86;
+  margin-bottom: 8px;
+}
+
+.currency-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid #E5DFD9;
+  cursor: pointer;
+}
+
+.currency-btn.active {
+  background-color: #1F1F1F;
+  color: #FFFFFF;
+}
+
+.currency-btn:not(.active) {
+  background-color: #F8F5F2;
+  color: #1F1F1F;
+}

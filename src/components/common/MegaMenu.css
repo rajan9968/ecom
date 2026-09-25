@@ -1,0 +1,140 @@
+/* Mega Menu Stylesheet - Pure Bootstrap Structure & Separate CSS */
+
+.mega-menu-backdrop {
+  position: fixed;
+  top: 76px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 90;
+}
+
+.mega-menu-backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mega-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: #FFFFFF;
+  border-top: 1px solid #ECE7E1;
+  border-bottom: 1px solid #E8E2DD;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+              visibility 0.22s ease;
+  z-index: 100;
+  pointer-events: none;
+  max-height: calc(100vh - 84px);
+  overflow-y: auto;
+}
+
+.mega-menu-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Headings */
+.mega-menu-heading {
+  font-family: var(--font-sans);
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: #1F1F1F;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.85rem;
+}
+
+/* Links */
+.mega-menu-link {
+  font-family: var(--font-sans);
+  font-size: 0.93rem;
+  color: #55514E;
+  text-decoration: none;
+  line-height: 1.5;
+  display: inline-block;
+  padding: 2px 0;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.mega-menu-link:hover {
+  color: #C5705D;
+  transform: translateX(4px);
+}
+
+/* Vertical column dividers for desktop */
+@media (min-width: 992px) {
+  .mega-menu-column.with-divider {
+    border-left: 1px solid #EDE8E2;
+    padding-left: 2rem;
+  }
+}
+
+/* Promo Card */
+.mega-menu-promo-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 340px;
+  background-color: #F5EBE6;
+  border-radius: 4px;
+  overflow: hidden;
+  display: block;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.mega-menu-promo-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mega-menu-promo-card:hover .mega-menu-promo-img {
+  transform: scale(1.04);
+}
+
+.mega-menu-promo-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.32) 0%, rgba(0, 0, 0, 0) 40%);
+  pointer-events: none;
+}
+
+.mega-menu-promo-btn {
+  position: absolute;
+  bottom: 22px;
+  left: 22px;
+  background-color: #F4C4B5;
+  color: #1F1F1F;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 9px 18px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+  text-transform: uppercase;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  display: inline-block;
+}
+
+.mega-menu-promo-card:hover .mega-menu-promo-btn {
+  background-color: #EAAFA0;
+  transform: translateY(-2px);
+}
