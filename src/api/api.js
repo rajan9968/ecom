@@ -1,6 +1,6 @@
 // Centralized API configuration and endpoints
-// export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.shopncart.in/';
+const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.shopncart.in';
+export const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, '');
 
 /**
  * Helper to build full URL from a relative path
