@@ -21,7 +21,7 @@
 }
 
 .header-logo-img {
-  height: 32px;
+  height: 145px;
   width: auto;
   object-fit: contain;
 }
@@ -93,7 +93,7 @@
   font-size: 0.58rem;
   font-weight: 800;
   letter-spacing: 0.05em;
-  background-color: #BA6C5A;
+  background-color: #901010;
   color: #FFFFFF;
   padding: 1px 5px;
   border-radius: 999px;
@@ -127,14 +127,14 @@
 }
 
 .header-action-btn:hover {
-  color: #C5705D;
+  color: #901010;
 }
 
 .badge-wishlist-count {
   position: absolute;
   top: 0;
   right: 0;
-  background-color: #C5705D;
+  background-color: #901010;
   color: #FFFFFF;
   font-size: 0.62rem;
   font-weight: 700;
@@ -150,8 +150,8 @@
   position: absolute;
   top: -2px;
   right: -4px;
-  background-color: #EAAFA0;
-  color: #1F1F1F;
+  background-color: #901010;
+  color: #FFFFFF;
   font-size: 0.65rem;
   font-weight: 700;
   border-radius: 999px;
@@ -179,5 +179,3 @@
     padding: 4px;
   }
 }
-
-

@@ -89,8 +89,8 @@
 }
 
 .mega-menu-link:hover {
-  background-color: #FDF5F3;
-  color: #BA6C5A;
+  background-color: #FDF2F2;
+  color: #901010;
   padding-left: 16px;
 }
 
@@ -98,16 +98,16 @@
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  background-color: #FDF5F3;
-  color: #BA6C5A;
+  background-color: #FDF2F2;
+  color: #901010;
   padding: 2px 7px;
   border-radius: 999px;
-  border: 1px solid rgba(186, 108, 90, 0.25);
+  border: 1px solid rgba(144, 16, 16, 0.25);
   text-transform: uppercase;
 }
 
 .mega-menu-link:hover .mega-sub-badge {
-  background-color: #BA6C5A;
+  background-color: #901010;
   color: #FFFFFF;
 }
 
@@ -131,8 +131,8 @@
 }
 
 .mega-nested-link:hover {
-  color: #BA6C5A;
-  background-color: #FDF5F3;
+  color: #901010;
+  background-color: #FDF2F2;
 }
 
 .mega-view-all-link {
@@ -140,14 +140,14 @@
   font-family: var(--font-sans);
   font-size: 0.82rem;
   font-weight: 600;
-  color: #BA6C5A;
+  color: #901010;
   text-decoration: none;
   margin-top: 14px;
   transition: transform 0.15s ease, color 0.15s ease;
 }
 
 .mega-view-all-link:hover {
-  color: #8C4736;
+  color: #730C0C;
   transform: translateX(3px);
 }
 

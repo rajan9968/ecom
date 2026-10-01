@@ -180,7 +180,7 @@
 }
 
 .pdp-size-guide-btn:hover {
-  color: #BA6C5A;
+  color: #901010;
 }
 
 .pdp-size-grid {
@@ -204,15 +204,15 @@
 }
 
 .pdp-size-pill:hover {
-  border-color: #BA6C5A;
-  background-color: #FDF9F8;
+  border-color: #901010;
+  background-color: #FDF2F2;
 }
 
 .pdp-size-pill.selected {
-  border-color: #BA6C5A;
-  background-color: #FDF6F4;
-  color: #8E3E2F;
-  box-shadow: 0 0 0 2px rgba(234, 175, 160, 0.4);
+  border-color: #901010;
+  background-color: #FDF2F2;
+  color: #901010;
+  box-shadow: 0 0 0 2px rgba(144, 16, 16, 0.25);
 }
 
 /* Stock Indicator */
@@ -272,7 +272,7 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background-color: #BA6C5A;
+  background-color: #901010;
   border: 2px solid #FFFFFF;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
@@ -376,14 +376,14 @@
 }
 
 .pdp-wishlist-toggle-btn:hover {
-  border-color: #BA6C5A;
-  color: #BA6C5A;
+  border-color: #901010;
+  color: #901010;
 }
 
 .pdp-wishlist-toggle-btn.active {
-  background-color: #FDF6F4;
-  border-color: #BA6C5A;
-  color: #BA6C5A;
+  background-color: #FDF2F2;
+  border-color: #901010;
+  color: #901010;
 }
 
 /* Often Bought Together (Complete the Look) */
@@ -417,7 +417,7 @@
 .pdp-cross-checkbox {
   width: 16px;
   height: 16px;
-  accent-color: #BA6C5A;
+  accent-color: #901010;
   cursor: pointer;
 }
 
@@ -500,7 +500,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background-color: #BA6C5A;
+  background-color: #901010;
 }
 
 .pdp-tab-content {
@@ -624,7 +624,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #BA6C5A;
+  color: #901010;
 }
 
 /* Size Guide Modal */

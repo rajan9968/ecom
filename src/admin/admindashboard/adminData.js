@@ -134,7 +134,7 @@ export const INITIAL_ORDERS = [
     customer: 'Charlotte Smith',
     email: 'c.smith@outlook.com',
     location: 'Edinburgh, UK',
-    avatarBg: '#BA6C5A',
+    avatarBg: '#901010',
     itemSummary: 'Navy Stripe Gauze Set (S) x 2',
     itemCount: 2,
     date: 'Today',
@@ -190,7 +190,7 @@ export const INITIAL_ORDERS = [
     customer: 'Lucy Walker',
     email: 'lucy.w@gmail.com',
     location: 'Oxford, UK',
-    avatarBg: '#C5705D',
+    avatarBg: '#901010',
     itemSummary: 'Read My Lips Satin Short Set (S) x 1',
     itemCount: 1,
     date: '22 Sep, 2026',
@@ -237,7 +237,7 @@ export const INITIAL_CUSTOMERS = [
     totalSpent: '£218.00',
     joinedDate: 'Mar 2026',
     status: 'Active',
-    avatarBg: '#BA6C5A'
+    avatarBg: '#901010'
   },
   {
     id: 'CUST-103',
@@ -281,7 +281,7 @@ export const INITIAL_CUSTOMERS = [
     totalSpent: '£116.00',
     joinedDate: 'Jun 2026',
     status: 'Active',
-    avatarBg: '#C5705D'
+    avatarBg: '#901010'
   }
 ];
 

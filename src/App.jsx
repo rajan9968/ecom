@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from
 import { CartProvider, useCart } from './context/CartContext.jsx';
 import { WishlistProvider } from './context/WishlistContext.jsx';
 import { CurrencyProvider } from './context/CurrencyContext.jsx';
+import { ProductProvider } from './context/ProductContext.jsx';
 
 import { AnnouncementBar } from './components/common/AnnouncementBar.jsx';
 import { Header } from './components/common/Header.jsx';
@@ -122,12 +123,12 @@ function StoreLayout({ children }) {
           bottom: '22px',
           left: '22px',
           zIndex: 350,
-          backgroundColor: '#BA6C5A',
+          backgroundColor: '#901010',
           color: '#FFFFFF',
           border: 'none',
           padding: '10px 18px',
           borderRadius: '999px',
-          boxShadow: '0 8px 24px rgba(186, 108, 90, 0.35)',
+          boxShadow: '0 8px 24px rgba(144, 16, 16, 0.35)',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
@@ -185,31 +186,33 @@ export default function App() {
   return (
     <BrowserRouter>
       <HashAdminRedirect />
-      <CurrencyProvider>
-        <WishlistProvider>
-          <CartProvider>
-            <Routes>
-              {/* Storefront Home Route */}
-              <Route path="/" element={<StoreLayout><HomePage /></StoreLayout>} />
+      <ProductProvider>
+        <CurrencyProvider>
+          <WishlistProvider>
+            <CartProvider>
+              <Routes>
+                {/* Storefront Home Route */}
+                <Route path="/" element={<StoreLayout><HomePage /></StoreLayout>} />
 
-              {/* Product Listing Routes (with Pagination & Filters) */}
-              <Route path="/collections" element={<StoreLayout><ProductListing /></StoreLayout>} />
-              <Route path="/collections/:category" element={<StoreLayout><ProductListing /></StoreLayout>} />
-              <Route path="/products" element={<StoreLayout><ProductListing /></StoreLayout>} />
+                {/* Product Listing Routes (with Pagination & Filters) */}
+                <Route path="/collections" element={<StoreLayout><ProductListing /></StoreLayout>} />
+                <Route path="/collections/:category" element={<StoreLayout><ProductListing /></StoreLayout>} />
+                <Route path="/products" element={<StoreLayout><ProductListing /></StoreLayout>} />
 
-              {/* Product Details Route */}
-              <Route path="/product" element={<StoreLayout><ProductDetails /></StoreLayout>} />
-              <Route path="/product/:id" element={<StoreLayout><ProductDetails /></StoreLayout>} />
+                {/* Product Details Route */}
+                <Route path="/product" element={<StoreLayout><ProductDetails /></StoreLayout>} />
+                <Route path="/product/:id" element={<StoreLayout><ProductDetails /></StoreLayout>} />
 
-              {/* Admin Routes (/admin, /admin/login, /admin/dashboard) */}
-              <Route path="/admin/*" element={<AdminRoutes />} />
+                {/* Admin Routes (/admin, /admin/login, /admin/dashboard) */}
+                <Route path="/admin/*" element={<AdminRoutes />} />
 
-              {/* Fallback to Storefront */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </CartProvider>
-        </WishlistProvider>
-      </CurrencyProvider>
+                {/* Fallback to Storefront */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </CartProvider>
+          </WishlistProvider>
+        </CurrencyProvider>
+      </ProductProvider>
     </BrowserRouter>
   );
 }

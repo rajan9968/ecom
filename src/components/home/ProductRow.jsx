@@ -4,7 +4,8 @@ import Slider from 'react-slick';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
-import { Heart, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useProducts } from '../../context/ProductContext.jsx';
+import { Heart, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import './ProductRow.css';
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
@@ -137,6 +138,7 @@ export function ProductRow() {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { formatPrice } = useCurrency();
+  const { products: dynamicProducts } = useProducts();
 
   // Dynamic calculation of slides count so mobile ALWAYS receives 2 items
   const getSlidesCount = () => {
@@ -164,7 +166,43 @@ export function ProductRow() {
     { id: 'linen-blend', label: 'Linen Blend Pyjamas & Nightdresses' }
   ];
 
-  const currentProducts = CATALOG_DATA[activeTab] || CATALOG_DATA['new-in'];
+  // Dynamically filter products from MySQL database
+  const activeProducts = (dynamicProducts && dynamicProducts.length > 0)
+    ? dynamicProducts.filter(p => p.status !== 'inactive')
+    : [];
+
+  let currentProducts = [];
+  if (activeProducts.length > 0) {
+    if (activeTab === 'new-in') {
+      const newItems = activeProducts.filter(p => 
+        p.isNew || 
+        p.is_new || 
+        (p.tag && p.tag.toUpperCase().includes('NEW')) || 
+        p.isSophie
+      );
+      currentProducts = newItems.length >= 2 ? newItems : activeProducts.slice(0, 10);
+    } else if (activeTab === 'best-sellers') {
+      const bestItems = activeProducts.filter(p => 
+        p.isBestseller || 
+        p.is_bestseller || 
+        (p.tag && p.tag.toUpperCase().includes('BEST'))
+      );
+      currentProducts = bestItems.length >= 2 ? bestItems : activeProducts.filter(p => (p.rating >= 4.8 || p.stock > 10)).slice(0, 10);
+    } else {
+      // Category or linen-blend
+      const linenItems = activeProducts.filter(p => 
+        (p.category && p.category.toLowerCase().includes('linen')) || 
+        (p.title && p.title.toLowerCase().includes('linen')) || 
+        (p.title && p.title.toLowerCase().includes('cotton'))
+      );
+      currentProducts = linenItems.length >= 2 ? linenItems : activeProducts.slice(0, 10);
+    }
+  }
+
+  // Fallback to CATALOG_DATA if no products match or still loading
+  if (!currentProducts || currentProducts.length === 0) {
+    currentProducts = CATALOG_DATA[activeTab] || CATALOG_DATA['new-in'];
+  }
 
   const sliderSettings = {
     dots: false,
@@ -233,6 +271,11 @@ export function ProductRow() {
         >
           {currentProducts.map((item) => {
             const wishlisted = isInWishlist(item.id);
+            const itemImg = item.image || (item.images && item.images[0]) || 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg';
+            const itemPrice = item.priceGBP !== undefined ? item.priceGBP : (typeof item.price === 'number' ? item.price : 45.0);
+            const itemTag = item.tag || (item.isBestseller || item.is_bestseller ? 'BESTSELLER' : item.isNew || item.is_new ? 'NEW' : null);
+            const isSophieCollab = item.isSophie || (item.title && item.title.toLowerCase().includes('sophie'));
+            const cardSizes = item.sizes && item.sizes.length > 0 ? (Array.isArray(item.sizes) ? item.sizes : SIZES) : SIZES;
 
             return (
               <div key={item.id}>
@@ -244,18 +287,23 @@ export function ProductRow() {
                   {/* Image Container with Hover Size Bar */}
                   <div className="card-media-wrap">
                     <img 
-                      src={item.image} 
+                      src={itemImg} 
                       alt={item.title}
                       className="card-product-img"
+                      onError={(e) => {
+                        e.target.src = 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg';
+                      }}
                     />
 
                     {/* Top Left Tag */}
-                    <span className="card-product-tag">
-                      {item.tag}
-                    </span>
+                    {itemTag && (
+                      <span className="card-product-tag">
+                        {itemTag}
+                      </span>
+                    )}
 
                     {/* Top Right Collaboration Stamp */}
-                    {item.isSophie && (
+                    {isSophieCollab && (
                       <div className="card-sophie-stamp">
                         <span style={{
                           fontFamily: 'var(--font-serif)',
@@ -263,7 +311,7 @@ export function ProductRow() {
                           fontSize: '0.62rem',
                           fontWeight: '600',
                           lineHeight: '1',
-                          color: '#C5705D'
+                          color: '#901010'
                         }}>
                           Sophie x
                         </span>
@@ -281,7 +329,7 @@ export function ProductRow() {
 
                     {/* Bottom Left Sizes Chips: Shows on Card Hover on Desktop */}
                     <div className="card-sizes-bar">
-                      {SIZES.map((size) => (
+                      {cardSizes.slice(0, 6).map((size) => (
                         <button
                           key={size}
                           onClick={(e) => {
@@ -320,7 +368,7 @@ export function ProductRow() {
                   </h3>
 
                   <span className="card-product-price">
-                    {formatPrice(item.priceGBP)}
+                    {formatPrice(itemPrice)}
                   </span>
                 </div>
               </div>

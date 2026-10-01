@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { PRODUCTS } from '../../data/products.js';
+import { useProducts } from '../../context/ProductContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
@@ -28,6 +29,7 @@ export function ProductListing() {
   const { category } = useParams();
   const [searchParams] = useSearchParams();
 
+  const { products: dynamicProducts, isLoading: isProductsLoading } = useProducts();
   const { addToCart, setIsCartOpen } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { formatPrice } = useCurrency();
@@ -52,7 +54,8 @@ export function ProductListing() {
 
   // Filtered & Sorted products
   const processedProducts = useMemo(() => {
-    let result = [...PRODUCTS];
+    const sourceProducts = (dynamicProducts && dynamicProducts.length > 0) ? dynamicProducts : PRODUCTS;
+    let result = [...sourceProducts];
 
     // Filter by Category
     if (selectedCategory && selectedCategory !== 'All') {
@@ -86,7 +89,7 @@ export function ProductListing() {
     }
 
     return result;
-  }, [selectedCategory, selectedSize, sortBy]);
+  }, [dynamicProducts, selectedCategory, selectedSize, sortBy]);
 
   // Pagination calculation
   const totalItems = processedProducts.length;
@@ -348,8 +351,8 @@ export function ProductListing() {
                         >
                           <Heart 
                             size={18} 
-                            color={wishlisted ? '#BA6C5A' : '#1F1F1F'}
-                            fill={wishlisted ? '#BA6C5A' : 'none'}
+                            color={wishlisted ? '#901010' : '#1F1F1F'}
+                            fill={wishlisted ? '#901010' : 'none'}
                           />
                         </button>
 

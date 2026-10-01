@@ -135,3 +135,35 @@ INSERT INTO `site_settings` (
 )
 ON DUPLICATE KEY UPDATE `site_name`=VALUES(`site_name`);
 
+-- --------------------------------------------------------
+-- Table structure for table `products` (Dynamic Boutique Catalog)
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `products` (
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(255) NOT NULL,
+  `handle` VARCHAR(255) DEFAULT NULL,
+  `category` VARCHAR(100) DEFAULT 'Womens',
+  `price_gbp` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `compare_at_price_gbp` DECIMAL(10,2) DEFAULT NULL,
+  `rating` DECIMAL(3,1) DEFAULT 4.8,
+  `review_count` INT(11) DEFAULT 0,
+  `is_bestseller` TINYINT(1) DEFAULT 0,
+  `is_new` TINYINT(1) DEFAULT 0,
+  `tag` VARCHAR(100) DEFAULT NULL,
+  `images` LONGTEXT DEFAULT NULL,
+  `description` LONGTEXT DEFAULT NULL,
+  `sizes` LONGTEXT DEFAULT NULL,
+  `details` LONGTEXT DEFAULT NULL,
+  `stock` INT(11) DEFAULT 25,
+  `status` VARCHAR(50) DEFAULT 'active',
+  `created` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `category` (`category`),
+  KEY `status` (`status`),
+  KEY `is_bestseller` (`is_bestseller`),
+  KEY `is_new` (`is_new`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+

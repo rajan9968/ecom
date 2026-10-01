@@ -9,8 +9,11 @@
   --color-border: #E8E2DD;
   --color-border-light: #F2ECE7;
   
+  --color-primary: #901010;
+  --color-primary-hover: #730C0C;
+  --color-primary-light: #FDF2F2;
   --color-accent-peach: #E6B09C;
-  --color-accent-terracotta: #C5705D;
+  --color-accent-terracotta: #901010;
   --color-accent-forest: #2A4B3C;
   --color-accent-gold: #DF9B52;
   --color-accent-pink: #F8D7DA;

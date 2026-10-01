@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
 import { PRODUCTS } from '../../data/products.js';
+import { useProducts } from '../../context/ProductContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
 import { Search, X, ShoppingBag } from 'lucide-react';
 
 export function SearchModal({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
+  const { products: dynamicProducts } = useProducts();
   const { addToCart } = useCart();
   const { formatPrice } = useCurrency();
 
   if (!isOpen) return null;
 
-  const filtered = PRODUCTS.filter(p => {
+  const allProds = (dynamicProducts && dynamicProducts.length > 0) ? dynamicProducts : PRODUCTS;
+
+  const filtered = allProds.filter(p => {
     if (!query.trim()) return false;
     const q = query.toLowerCase();
-    return p.title.toLowerCase().includes(q) || 
-           p.category.toLowerCase().includes(q) ||
-           p.description.toLowerCase().includes(q);
+    return (p.title && p.title.toLowerCase().includes(q)) || 
+           (p.category && p.category.toLowerCase().includes(q)) ||
+           (p.description && p.description.toLowerCase().includes(q));
   });
 
   return (

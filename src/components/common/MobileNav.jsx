@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
 import { X, ChevronDown } from 'lucide-react';
+import { API_ENDPOINTS } from '../../api/api.js';
 import './MobileNav.css';
 
 export function MobileNav({ isOpen, onClose }) {
@@ -9,7 +10,7 @@ export function MobileNav({ isOpen, onClose }) {
   const [navItems, setNavItems] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/menu')
+    fetch(API_ENDPOINTS.MENU)
       .then(res => res.json())
       .then(json => {
         if (json.success && Array.isArray(json.data)) {

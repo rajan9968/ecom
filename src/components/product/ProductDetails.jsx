@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
+import { useProducts } from '../../context/ProductContext.jsx';
 import { 
   Heart, 
   Star, 
@@ -14,7 +15,7 @@ import {
   X, 
   ShieldCheck, 
   Truck, 
-  RotateCcw,
+  RotateCcw, 
   Sparkles
 } from 'lucide-react';
 import { FoundersStory } from '../home/FoundersStory.jsx';
@@ -88,11 +89,38 @@ const PRODUCT_DATA = {
 
 export function ProductDetails() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const { getProductById } = useProducts();
   const { addToCart, setIsCartOpen } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { formatPrice } = useCurrency();
 
-  const [selectedSize, setSelectedSize] = useState('10-12 (M)');
+  const dynamicItem = id ? getProductById(id) : null;
+  const activeProduct = dynamicItem ? {
+    ...PRODUCT_DATA,
+    id: dynamicItem.id,
+    title: dynamicItem.title,
+    brand: 'Their Nibs London',
+    category: dynamicItem.category || 'Women',
+    priceGBP: dynamicItem.priceGBP || 45.0,
+    rating: parseFloat(dynamicItem.rating) || 4.9,
+    reviewsCount: dynamicItem.reviewCount || 42,
+    stockAlert: (dynamicItem.stock !== undefined && dynamicItem.stock <= 5)
+      ? `Low in stock - only ${dynamicItem.stock} left`
+      : `${dynamicItem.stock || 25} in stock - ready for fast dispatch`,
+    images: Array.isArray(dynamicItem.images) && dynamicItem.images.length > 0 
+      ? dynamicItem.images 
+      : [dynamicItem.image || PRODUCT_DATA.images[0]],
+    sizes: Array.isArray(dynamicItem.sizes) && dynamicItem.sizes.length > 0 
+      ? dynamicItem.sizes 
+      : PRODUCT_DATA.sizes,
+    description: dynamicItem.description || '',
+    details: Array.isArray(dynamicItem.details) && dynamicItem.details.length > 0 
+      ? dynamicItem.details 
+      : null
+  } : PRODUCT_DATA;
+
+  const [selectedSize, setSelectedSize] = useState(activeProduct.sizes[0] || '10-12 (M)');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
@@ -101,15 +129,22 @@ export function ProductDetails() {
     'seb-robe': true
   });
 
-  const isFavorited = isInWishlist(PRODUCT_DATA.id);
+  useEffect(() => {
+    if (activeProduct.sizes && activeProduct.sizes.length > 0) {
+      setSelectedSize(activeProduct.sizes[0]);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [id]);
+
+  const isFavorited = isInWishlist(activeProduct.id);
 
   // Add primary product to bag
   const handleAddToBag = () => {
     addToCart({
-      id: PRODUCT_DATA.id,
-      title: PRODUCT_DATA.title,
-      priceGBP: PRODUCT_DATA.priceGBP,
-      image: PRODUCT_DATA.images[0],
+      id: activeProduct.id,
+      title: activeProduct.title,
+      priceGBP: activeProduct.priceGBP,
+      image: activeProduct.images[0],
       size: selectedSize
     }, quantity);
     setIsCartOpen(true);
@@ -117,7 +152,7 @@ export function ProductDetails() {
 
   // Add companion products to bag
   const handleAddSelectedAddons = () => {
-    PRODUCT_DATA.companionItems.forEach((item) => {
+    activeProduct.companionItems.forEach((item) => {
       if (selectedAddons[item.id]) {
         addToCart({
           id: item.id,
@@ -131,10 +166,10 @@ export function ProductDetails() {
     setIsCartOpen(true);
   };
 
-  const toggleAddon = (id) => {
+  const toggleAddon = (itemId) => {
     setSelectedAddons((prev) => ({
       ...prev,
-      [id]: !prev[id]
+      [itemId]: !prev[itemId]
     }));
   };
 
@@ -149,11 +184,11 @@ export function ProductDetails() {
             </li>
             <li className="pdp-breadcrumb-sep">/</li>
             <li className="pdp-breadcrumb-item">
-              <Link to="/">{PRODUCT_DATA.category}</Link>
+              <Link to={`/collections/${(activeProduct.category || 'all').toLowerCase()}`}>{activeProduct.category}</Link>
             </li>
             <li className="pdp-breadcrumb-sep">/</li>
             <li className="pdp-breadcrumb-item active">
-              {PRODUCT_DATA.title}
+              {activeProduct.title}
             </li>
           </ul>
         </div>
@@ -166,13 +201,16 @@ export function ProductDetails() {
             {/* Left Column: Vertical Stacked Product Gallery */}
             <div className="col-12 col-lg-7">
               <div className="pdp-gallery-stack">
-                {PRODUCT_DATA.images.map((imgSrc, idx) => (
+                {activeProduct.images.map((imgSrc, idx) => (
                   <div key={idx} className="pdp-gallery-item">
                     <img 
                       src={imgSrc} 
-                      alt={`${PRODUCT_DATA.title} - View ${idx + 1}`} 
+                      alt={`${activeProduct.title} - View ${idx + 1}`} 
                       className="pdp-gallery-img"
                       loading={idx === 0 ? 'eager' : 'lazy'}
+                      onError={(e) => {
+                        e.target.src = 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg';
+                      }}
                     />
                   </div>
                 ))}
@@ -205,28 +243,23 @@ export function ProductDetails() {
                   {activeTab === 'description' && (
                     <div>
                       <p>
-                        A playful dose of bedtime glamour from our limited-edition collaboration with Sophie Ellis-Bextor. 
-                        This silky satin pyjama set showcases our Read My Lips print—a nod to Sophie’s iconic disco glamour and love of quirky vintage design.
+                        {activeProduct.description || 'A playful dose of bedtime glamour from our luxury collection. Crafted with soft, breathable fabrics and signature British prints.'}
                       </p>
-                      <p>
-                        Tailored with an oversized, relaxed silhouette, revere collar, fluid wide-leg trousers, and contrast piping, 
-                        these pyjamas bring everyday joy and uplifting energy to lazy mornings and cozy bedtimes.
-                      </p>
-                      <ul>
-                        <li>Limited-edition collaboration with Sophie Ellis-Bextor</li>
-                        <li>Hand-drawn British boutique print on liquid-silk recycled satin</li>
-                        <li>Button-front shirt with chest pocket and contrast piped revere collar</li>
-                        <li>Relaxed wide-leg trousers with elasticated waistband and drawstring tie</li>
-                        <li>Designed in London by women, for women</li>
-                      </ul>
+                      {activeProduct.details && activeProduct.details.length > 0 && (
+                        <ul>
+                          {activeProduct.details.map((detail, di) => (
+                            <li key={di}>{detail}</li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   )}
 
                   {activeTab === 'details' && (
                     <div>
-                      <p><strong>Fabric Composition:</strong> 100% Recycled Silky Satin (breathable, anti-static, featherlight).</p>
-                      <p><strong>Washing Instructions:</strong> Machine wash cold at 30°C on a gentle cycle. Wash inside out with similar colours. Cool iron on reverse. Do not tumble dry.</p>
-                      <p><strong>Fit Guide:</strong> Oversized, easy fit designed for generous lounge comfort. If you prefer a closer fit, please order one size down.</p>
+                      <p><strong>Fabric Composition:</strong> 100% Super-soft breathable fabric (cotton or liquid-silk satin).</p>
+                      <p><strong>Washing Instructions:</strong> Machine wash gentle at 30°C. Wash inside out with similar colours. Cool iron on reverse. Do not tumble dry.</p>
+                      <p><strong>Fit Guide:</strong> Generous lounge comfort fit. If you prefer a closer fit, please order one size down.</p>
                     </div>
                   )}
 
@@ -245,10 +278,10 @@ export function ProductDetails() {
             <div className="col-12 col-lg-5">
               <div className="pdp-info-sticky">
                 {/* Brand Tag */}
-                <span className="pdp-brand-tag">{PRODUCT_DATA.brand}</span>
+                <span className="pdp-brand-tag">{activeProduct.brand}</span>
 
                 {/* Title */}
-                <h1 className="pdp-title">{PRODUCT_DATA.title}</h1>
+                <h1 className="pdp-title">{activeProduct.title}</h1>
 
                 {/* Rating & Reviews */}
                 <div className="pdp-rating-row">
@@ -257,13 +290,13 @@ export function ProductDetails() {
                       <Star key={i} size={15} fill="#F59E0B" color="#F59E0B" />
                     ))}
                   </div>
-                  <span style={{ fontWeight: '700', color: '#111827' }}>{PRODUCT_DATA.rating}</span>
-                  <span className="pdp-reviews-count">({PRODUCT_DATA.reviewsCount} reviews)</span>
+                  <span style={{ fontWeight: '700', color: '#111827' }}>{activeProduct.rating}</span>
+                  <span className="pdp-reviews-count">({activeProduct.reviewsCount} reviews)</span>
                 </div>
 
                 {/* Price */}
                 <div className="pdp-price-row">
-                  <span className="pdp-current-price">{formatPrice(PRODUCT_DATA.priceGBP)}</span>
+                  <span className="pdp-current-price">{formatPrice(activeProduct.priceGBP)}</span>
                   <span className="pdp-vat-note">Includes all taxes</span>
                 </div>
 
@@ -280,7 +313,7 @@ export function ProductDetails() {
                   </div>
 
                   <div className="pdp-size-grid">
-                    {PRODUCT_DATA.sizes.map((sz) => (
+                    {activeProduct.sizes.map((sz) => (
                       <button
                         key={sz}
                         className={`pdp-size-pill ${selectedSize === sz ? 'selected' : ''}`}
@@ -295,7 +328,7 @@ export function ProductDetails() {
                 {/* Stock Alert */}
                 <div className="pdp-stock-alert">
                   <span className="pdp-stock-dot" />
-                  <span>{PRODUCT_DATA.stockAlert}</span>
+                  <span>{activeProduct.stockAlert}</span>
                 </div>
 
                 {/* Fit Indicator */}
@@ -314,7 +347,7 @@ export function ProductDetails() {
                 <div className="pdp-klarna-box">
                   <Sparkles size={16} color="#9333EA" />
                   <span>
-                    Pay in 3 interest-free installments of <strong>{formatPrice(PRODUCT_DATA.priceGBP / 3)}</strong> with Klarna.
+                    Pay in 3 interest-free installments of <strong>{formatPrice(activeProduct.priceGBP / 3)}</strong> with Klarna.
                   </span>
                 </div>
 
@@ -350,17 +383,17 @@ export function ProductDetails() {
                   {/* Wishlist Button */}
                   <button 
                     className={`pdp-wishlist-toggle-btn ${isFavorited ? 'active' : ''}`}
-                    onClick={() => toggleWishlist(PRODUCT_DATA)}
+                    onClick={() => toggleWishlist(activeProduct)}
                     aria-label="Save to Wishlist"
                   >
-                    <Heart size={20} fill={isFavorited ? '#BA6C5A' : 'none'} color={isFavorited ? '#BA6C5A' : '#4B5563'} />
+                    <Heart size={20} fill={isFavorited ? '#901010' : 'none'} color={isFavorited ? '#901010' : '#4B5563'} />
                   </button>
                 </div>
 
                 {/* Often Bought Together (Complete the Look) */}
                 <div className="pdp-cross-sell-card">
                   <div className="pdp-cross-sell-title">Complete the Look</div>
-                  {PRODUCT_DATA.companionItems.map((addon) => (
+                  {activeProduct.companionItems && activeProduct.companionItems.map((addon) => (
                     <div key={addon.id} className="pdp-cross-sell-item">
                       <input 
                         type="checkbox"
@@ -398,7 +431,7 @@ export function ProductDetails() {
           </div>
 
           <div className="row g-3 g-md-4">
-            {PRODUCT_DATA.recommended.map((item) => (
+            {activeProduct.recommended && activeProduct.recommended.map((item) => (
               <div key={item.id} className="col-6 col-md-3">
                 <div 
                   className="pdp-rec-card"

@@ -202,4 +202,80 @@ export async function initBannersTable() {
   }
 }
 
+// Ensure products table exists and seed with store catalog if empty
+export async function initProductsTable() {
+  try {
+    const createProductsTableSql = `
+      CREATE TABLE IF NOT EXISTS \`products\` (
+        \`id\` BIGINT(20) NOT NULL AUTO_INCREMENT,
+        \`title\` VARCHAR(255) NOT NULL,
+        \`handle\` VARCHAR(255) DEFAULT NULL,
+        \`category\` VARCHAR(100) DEFAULT 'Womens',
+        \`price_gbp\` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        \`compare_at_price_gbp\` DECIMAL(10,2) DEFAULT NULL,
+        \`rating\` DECIMAL(3,1) DEFAULT 4.8,
+        \`review_count\` INT(11) DEFAULT 0,
+        \`is_bestseller\` TINYINT(1) DEFAULT 0,
+        \`is_new\` TINYINT(1) DEFAULT 0,
+        \`tag\` VARCHAR(100) DEFAULT NULL,
+        \`images\` LONGTEXT DEFAULT NULL,
+        \`description\` LONGTEXT DEFAULT NULL,
+        \`sizes\` LONGTEXT DEFAULT NULL,
+        \`details\` LONGTEXT DEFAULT NULL,
+        \`stock\` INT(11) DEFAULT 25,
+        \`status\` VARCHAR(50) DEFAULT 'active',
+        \`created\` DATETIME DEFAULT CURRENT_TIMESTAMP,
+        \`updated\` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (\`id\`),
+        KEY \`category\` (\`category\`),
+        KEY \`status\` (\`status\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+    `;
+    await pool.query(createProductsTableSql);
+
+    // Check if products exist
+    const [rows] = await pool.query('SELECT id FROM products LIMIT 1');
+    if (rows.length === 0) {
+      console.log('[MySQL] Seeding products table from initial catalog...');
+      const { PRODUCTS } = await import('../data/initialProducts.js');
+
+      if (Array.isArray(PRODUCTS) && PRODUCTS.length > 0) {
+        for (const item of PRODUCTS) {
+          const insertSql = `
+            INSERT INTO \`products\` (
+              \`id\`, \`title\`, \`handle\`, \`category\`, \`price_gbp\`,
+              \`rating\`, \`review_count\`, \`is_bestseller\`, \`is_new\`,
+              \`tag\`, \`images\`, \`description\`, \`sizes\`, \`details\`, \`stock\`, \`status\`
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `;
+          await pool.query(insertSql, [
+            item.id || null,
+            item.title || 'Untitled Product',
+            item.handle || (item.title ? item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : 'product'),
+            item.category || 'Womens',
+            Number(item.priceGBP) || 45.00,
+            parseFloat(item.rating) || 4.8,
+            Number(item.reviewCount) || 12,
+            item.isBestseller ? 1 : 0,
+            item.isNew ? 1 : 0,
+            item.tag || (item.isBestseller ? 'BESTSELLER' : item.isNew ? 'NEW' : null),
+            JSON.stringify(Array.isArray(item.images) ? item.images : (item.image ? [item.image] : [])),
+            item.description || '',
+            JSON.stringify(Array.isArray(item.sizes) ? item.sizes : []),
+            JSON.stringify(Array.isArray(item.details) ? item.details : []),
+            Math.floor(Math.random() * 25) + 8, // realistic stock count between 8 and 32
+            'active'
+          ]);
+        }
+        console.log(`[MySQL] Successfully seeded ${PRODUCTS.length} products into MySQL products table.`);
+      }
+    } else {
+      console.log('[MySQL] products table checked & ready.');
+    }
+  } catch (error) {
+    console.error('[MySQL] initProductsTable error:', error.message);
+  }
+}
+
+
 

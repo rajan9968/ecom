@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PRODUCTS } from '../../data/products.js';
+import { useProducts } from '../../context/ProductContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
@@ -7,13 +8,16 @@ import { Heart, Star, ShoppingBag, Eye } from 'lucide-react';
 
 export function FeaturedCarousel({ onQuickView }) {
   const [activeTab, setActiveTab] = useState('bestsellers');
+  const { products: dynamicProducts } = useProducts();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { formatPrice } = useCurrency();
 
+  const allProds = (dynamicProducts && dynamicProducts.length > 0) ? dynamicProducts : PRODUCTS;
+
   const displayedProducts = activeTab === 'bestsellers' 
-    ? PRODUCTS.filter(p => p.isBestseller).slice(0, 8)
-    : PRODUCTS.filter(p => p.isNew).slice(0, 8);
+    ? allProds.filter(p => p.isBestseller).slice(0, 8)
+    : allProds.filter(p => p.isNew).slice(0, 8);
 
   return (
     <section id="featured-products" style={{

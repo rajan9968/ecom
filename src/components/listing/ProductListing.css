@@ -111,15 +111,15 @@
 }
 
 .plp-filter-pill-btn:hover {
-  background-color: #FDF6F4;
-  border-color: #BA6C5A;
-  color: #8E3E2F;
+  background-color: #FDF2F2;
+  border-color: #901010;
+  color: #901010;
 }
 
 .plp-filter-pill-btn.active {
-  background-color: #FDF6F4;
-  border-color: #BA6C5A;
-  color: #8E3E2F;
+  background-color: #FDF2F2;
+  border-color: #901010;
+  color: #901010;
 }
 
 /* Sort & View Options */
@@ -152,7 +152,7 @@
 }
 
 .plp-sort-select:focus {
-  border-color: #BA6C5A;
+  border-color: #901010;
 }
 
 /* Grid Column Switcher */
@@ -290,7 +290,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background-color: #BA6C5A;
+  background-color: #901010;
   color: #FFFFFF;
   font-size: 0.65rem;
   font-weight: 700;
@@ -324,7 +324,7 @@
   font-size: 0.6rem;
   font-weight: 600;
   line-height: 1;
-  color: #BA6C5A;
+  color: #901010;
 }
 
 .plp-sophie-stamp-label {
@@ -397,8 +397,8 @@
 }
 
 .plp-size-quick-btn:hover {
-  background-color: #BA6C5A;
-  border-color: #BA6C5A;
+  background-color: #901010;
+  border-color: #901010;
   color: #FFFFFF;
 }
 
@@ -421,7 +421,7 @@
 }
 
 .plp-card-title:hover {
-  color: #BA6C5A;
+  color: #901010;
 }
 
 .plp-card-rating {
@@ -450,7 +450,7 @@
 .plp-card-quick-add-link {
   font-size: 0.76rem;
   font-weight: 700;
-  color: #BA6C5A;
+  color: #901010;
   text-decoration: underline;
   cursor: pointer;
   background: transparent;
@@ -494,7 +494,7 @@
 
 .plp-pagination-progress-fill {
   height: 100%;
-  background-color: #BA6C5A;
+  background-color: #901010;
   border-radius: 999px;
   transition: width 0.3s ease;
 }
@@ -523,9 +523,9 @@
 }
 
 .plp-page-nav-btn:hover:not(:disabled) {
-  border-color: #BA6C5A;
-  color: #BA6C5A;
-  background-color: #FDF6F4;
+  border-color: #901010;
+  color: #901010;
+  background-color: #FDF2F2;
 }
 
 .plp-page-nav-btn:disabled {
@@ -551,17 +551,17 @@
 }
 
 .plp-page-number-btn:hover {
-  border-color: #BA6C5A;
-  color: #BA6C5A;
-  background-color: #FDF6F4;
+  border-color: #901010;
+  color: #901010;
+  background-color: #FDF2F2;
 }
 
 .plp-page-number-btn.active {
-  background-color: rgb(234, 175, 160);
-  border-color: #BA6C5A;
-  color: #1A1A1A;
+  background-color: #901010;
+  border-color: #901010;
+  color: #FFFFFF;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(234, 175, 160, 0.4);
+  box-shadow: 0 2px 8px rgba(144, 16, 16, 0.35);
 }
 
 .plp-page-ellipsis {
@@ -600,7 +600,7 @@
 .plp-popover-checkbox {
   width: 16px;
   height: 16px;
-  accent-color: #BA6C5A;
+  accent-color: #901010;
 }
 
 /* Empty State */

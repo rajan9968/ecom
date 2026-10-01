@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   X 
 } from 'lucide-react';
+import { API_ENDPOINTS } from '../../api/api.js';
 import './AdminLogin.css';
 
 export function AdminLogin({ onLoginSuccess, onExit }) {
@@ -37,7 +38,7 @@ export function AdminLogin({ onLoginSuccess, onExit }) {
 
     try {
       // Connect to Express backend API
-      const res = await fetch('http://localhost:5001/api/auth/login', {
+      const res = await fetch(API_ENDPOINTS.AUTH_LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: email.trim(), password: password.trim() })
@@ -259,7 +260,7 @@ export function AdminLogin({ onLoginSuccess, onExit }) {
 
             {forgotSubmitted ? (
               <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                <CheckCircle2 size={44} color="#BA6C5A" style={{ margin: '0 auto 12px' }} />
+                <CheckCircle2 size={44} color="#901010" style={{ margin: '0 auto 12px' }} />
                 <h4 style={{ margin: '0 0 6px', fontSize: '1.05rem', fontWeight: '700' }}>Password Reset Email Sent</h4>
                 <p style={{ fontSize: '0.84rem', color: '#6B7280', margin: '0 0 20px', lineHeight: '1.4' }}>
                   A recovery link has been dispatched to <strong>{forgotEmail || 'your email'}</strong>.

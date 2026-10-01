@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Instagram, Facebook, Twitter, Mail, Phone, MapPin } from 'lucide-react';
+import { API_ENDPOINTS } from '../../api/api.js';
 
 export function Footer() {
   const [settings, setSettings] = useState({
@@ -16,7 +17,7 @@ export function Footer() {
   });
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/settings')
+    fetch(API_ENDPOINTS.SETTINGS)
       .then(res => res.json())
       .then(json => {
         if (json.success && json.data) {

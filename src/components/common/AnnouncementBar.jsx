@@ -19,8 +19,8 @@ export function AnnouncementBar() {
 
   return (
     <div style={{
-      backgroundColor: '#EAAFA0',
-      color: '#1F1F1F',
+      backgroundColor: '#901010',
+      color: '#FFFFFF',
       height: '36px',
       fontSize: 'clamp(0.64rem, 2.2vw, 0.74rem)',
       fontWeight: '600',

@@ -1,11 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { testConnection, initMenuTable, initSettingsTable, initBannersTable } from './config/db.js';
+import { testConnection, initMenuTable, initSettingsTable, initBannersTable, initProductsTable } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import menuRoutes from './routes/menuRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import bannerRoutes from './routes/bannerRoutes.js';
+import productRoutes from './routes/productRoutes.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -41,6 +42,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/banners', bannerRoutes);
+app.use('/api/products', productRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -58,8 +60,9 @@ app.get('/', (req, res) => {
       <h1 style="color: #BA6C5A;">Their Nibs Ecom Backend API</h1>
       <p>Node.js + Express + MySQL API is running smoothly on port ${PORT}.</p>
       <p>Database: <code>${process.env.DB_NAME || 'ecomdb'}</code> (phpMyAdmin)</p>
-      <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+      <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
         <a href="/api/health" style="background-color: #BA6C5A; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px;">Check API Health</a>
+        <a href="/api/products" style="background-color: #BA6C5A; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px;">View Dynamic Products API</a>
         <a href="/api/menu" style="background-color: #1E2328; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px;">View Dynamic Menu Tree</a>
         <a href="/api/banners" style="background-color: #BA6C5A; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px;">View Hero Banners</a>
       </div>
@@ -72,6 +75,7 @@ app.listen(PORT, async () => {
   console.log(`===============================================`);
   console.log(`🚀 Backend Server running on: http://localhost:${PORT}`);
   console.log(`📡 Database: MySQL (${process.env.DB_NAME || 'ecomdb'})`);
+  console.log(`👗 Products API: http://localhost:${PORT}/api/products`);
   console.log(`📋 Menu API: http://localhost:${PORT}/api/menu`);
   console.log(`⚙️  Settings API: http://localhost:${PORT}/api/settings`);
   console.log(`🖼️  Banners API: http://localhost:${PORT}/api/banners`);
@@ -86,6 +90,8 @@ app.listen(PORT, async () => {
     await initSettingsTable();
     // Initialize & seed hero_banners table in MySQL
     await initBannersTable();
+    // Initialize & seed products table in MySQL
+    await initProductsTable();
   }
 });
 

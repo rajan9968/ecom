@@ -4,13 +4,13 @@
    ============================================================ */
 
 :root {
-  --admin-theme: rgb(234, 175, 160);
-  --admin-theme-dark: #BA6C5A;
-  --admin-theme-deep: #9F5444;
-  --admin-theme-light: #FDF6F4;
-  --admin-theme-soft: #F6DDD6;
-  --admin-theme-glow: rgba(234, 175, 160, 0.35);
-  --admin-theme-dark-glow: rgba(186, 108, 90, 0.25);
+  --admin-theme: #B82828;
+  --admin-theme-dark: #901010;
+  --admin-theme-deep: #660B0B;
+  --admin-theme-light: #FDF2F2;
+  --admin-theme-soft: #FCDCDC;
+  --admin-theme-glow: rgba(144, 16, 16, 0.25);
+  --admin-theme-dark-glow: rgba(144, 16, 16, 0.2);
 }
 
 .admin-login-viewport {
@@ -68,7 +68,7 @@
 
 /* Left Brand Showcase Banner (Desktop) */
 .admin-login-banner {
-  background: linear-gradient(145deg, #8E3E2F 0%, #BA6C5A 50%, rgb(234, 175, 160) 100%);
+  background: linear-gradient(145deg, #660B0B 0%, #901010 50%, #B82828 100%);
   color: #FFFFFF;
   padding: clamp(32px, 4vw, 54px);
   display: flex;
@@ -271,7 +271,7 @@
 }
 
 .admin-demo-badge {
-  background-color: #BA6C5A;
+  background-color: #901010;
   color: #FFFFFF;
   font-size: 0.68rem;
   font-weight: 700;
@@ -282,13 +282,13 @@
 
 .admin-demo-text {
   font-size: 0.78rem;
-  color: #8E3E2F;
+  color: #901010;
   margin: 0;
   font-family: monospace;
 }
 
 .admin-demo-btn {
-  background-color: #BA6C5A;
+  background-color: #901010;
   color: #FFFFFF;
   border: none;
   border-radius: 8px;
@@ -301,7 +301,7 @@
 }
 
 .admin-demo-btn:hover {
-  background-color: #9F5444;
+  background-color: #730C0C;
 }
 
 /* Form Fields */
@@ -326,14 +326,14 @@
 .admin-field-link {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #BA6C5A;
+  color: #901010;
   text-decoration: none;
   cursor: pointer;
 }
 
 .admin-field-link:hover {
   text-decoration: underline;
-  color: #9F5444;
+  color: #730C0C;
 }
 
 .admin-input-wrapper {
@@ -365,8 +365,8 @@
 
 .admin-form-control:focus {
   background-color: #FFFFFF;
-  border-color: #BA6C5A;
-  box-shadow: 0 0 0 3px rgba(234, 175, 160, 0.25);
+  border-color: #901010;
+  box-shadow: 0 0 0 3px rgba(144, 16, 16, 0.18);
 }
 
 .admin-password-toggle {
@@ -408,7 +408,7 @@
 .admin-checkbox-input {
   width: 16px;
   height: 16px;
-  accent-color: #BA6C5A;
+  accent-color: #901010;
   cursor: pointer;
   border-radius: 4px;
 }
@@ -416,7 +416,7 @@
 /* Submit Action Button */
 .admin-login-submit-btn {
   width: 100%;
-  background: linear-gradient(135deg, #BA6C5A 0%, rgb(234, 175, 160) 100%);
+  background: linear-gradient(135deg, #901010 0%, #B82828 100%);
   color: #FFFFFF;
   border: none;
   border-radius: 11px;
@@ -429,13 +429,13 @@
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(186, 108, 90, 0.25);
+  box-shadow: 0 4px 16px rgba(144, 16, 16, 0.25);
   transition: all 0.2s ease;
 }
 
 .admin-login-submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #9F5444 0%, #BA6C5A 100%);
-  box-shadow: 0 6px 20px rgba(186, 108, 90, 0.35);
+  background: linear-gradient(135deg, #730C0C 0%, #901010 100%);
+  box-shadow: 0 6px 20px rgba(144, 16, 16, 0.35);
   transform: translateY(-1px);
 }
 

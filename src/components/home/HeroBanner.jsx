@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import Slider from 'react-slick';
 import { gsap } from '../../utils/animations.jsx';
+import { API_ENDPOINTS } from '../../api/api.js';
 import './HeroBanner.css';
 
 const DEFAULT_SLIDES = [
@@ -45,7 +46,7 @@ export function HeroBanner() {
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        const res = await fetch('http://localhost:5001/api/banners?status=active');
+        const res = await fetch(`${API_ENDPOINTS.BANNERS}?status=active`);
         const json = await res.json();
         if (json.success && Array.isArray(json.data) && json.data.length > 0) {
           const mapped = json.data.map(item => ({

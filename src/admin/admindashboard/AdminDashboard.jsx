@@ -66,6 +66,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import './AdminDashboard.css';
+import { API_ENDPOINTS } from '../../api/api.js';
 
 export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
   const navigate = useNavigate();
@@ -108,14 +109,39 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
   const [chartMode, setChartMode] = useState('monthly');
   const [activeBarIndex, setActiveBarIndex] = useState(6); // July (peak month) highlighted by default
 
-  // Products state & Add Product modal
+  // Live Dynamic Products state (managed via MySQL /api/products)
   const [products, setProducts] = useState(TOP_SELLING_PRODUCTS);
-  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
-  const [newProdTitle, setNewProdTitle] = useState('');
-  const [newProdCategory, setNewProdCategory] = useState('Womens Pyjamas');
-  const [newProdPrice, setNewProdPrice] = useState('48.00');
-  const [newProdStock, setNewProdStock] = useState('25');
-  const [newProdImage, setNewProdImage] = useState('https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg');
+  const [productsList, setProductsList] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState('All');
+  const [productStockFilter, setProductStockFilter] = useState('All');
+  const [productHomeFilter, setProductHomeFilter] = useState('All');
+  const [productViewMode, setProductViewMode] = useState('grid');
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [deleteProductConfirm, setDeleteProductConfirm] = useState(null);
+  const [isUploadingProductImg, setIsUploadingProductImg] = useState(false);
+  const [productForm, setProductForm] = useState({
+    title: '',
+    category: 'Womens',
+    price: '46.00',
+    compare_at_price: '',
+    stock: 25,
+    tag: 'NEW',
+    is_bestseller: false,
+    is_new: true,
+    image_url: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg',
+    description: '',
+    sizes: ['XS (UK 8)', 'S (UK 10)', 'M (UK 12)', 'L (UK 14)', 'XL (UK 16)'],
+    details: [
+      '100% Super-soft breathable fabric',
+      'Hand-illustrated British boutique print',
+      'Pocket piping and tonal mother-of-pearl buttons',
+      'Machine wash gentle at 30°C'
+    ],
+    status: 'active'
+  });
 
   // Customer Orders state & filters
   const [orders, setOrders] = useState(INITIAL_ORDERS);
@@ -202,7 +228,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
   // Fetch site settings from MySQL
   const fetchSiteSettings = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/settings');
+      const res = await fetch(API_ENDPOINTS.SETTINGS);
       const json = await res.json();
       if (json.success && json.data) {
         setSiteSettings(json.data);
@@ -217,7 +243,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
     if (e) e.preventDefault();
     setIsSavingSettings(true);
     try {
-      const res = await fetch('http://localhost:5001/api/settings', {
+      const res = await fetch(API_ENDPOINTS.SETTINGS, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(siteSettings)
@@ -252,7 +278,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
       formData.append('file', file);
       formData.append('type', type);
 
-      const res = await fetch('http://localhost:5001/api/settings/upload', {
+      const res = await fetch(API_ENDPOINTS.SETTINGS_UPLOAD, {
         method: 'POST',
         body: formData
       });
@@ -292,7 +318,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
   const fetchMenuData = async () => {
     setIsLoadingMenus(true);
     try {
-      const res = await fetch('http://localhost:5001/api/menu?all=true');
+      const res = await fetch(`${API_ENDPOINTS.MENU}?all=true`);
       const json = await res.json();
       if (json.success && json.data) {
         setMenuTree(json.data);
@@ -300,7 +326,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
         setExpandedMenuIds(pIds);
       }
 
-      const resAll = await fetch('http://localhost:5001/api/menu/all');
+      const resAll = await fetch(API_ENDPOINTS.MENU_ALL);
       const jsonAll = await resAll.json();
       if (jsonAll.success && jsonAll.parents) {
         setMenuParents(jsonAll.parents);
@@ -316,7 +342,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
   const fetchBanners = async () => {
     setIsLoadingBanners(true);
     try {
-      const res = await fetch('http://localhost:5001/api/banners');
+      const res = await fetch(API_ENDPOINTS.BANNERS);
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         setBanners(json.data);
@@ -328,11 +354,320 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
     }
   };
 
+  // Fetch Products from Backend API (MySQL)
+  const fetchProductsList = async () => {
+    setIsLoadingProducts(true);
+    try {
+      const res = await fetch(`${API_ENDPOINTS.PRODUCTS}?status=all`);
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setProductsList(json.data);
+        setProducts(json.data.slice(0, 8));
+      }
+    } catch (err) {
+      console.warn('Backend products fetch error:', err.message);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+
   useEffect(() => {
     fetchMenuData();
     fetchSiteSettings();
     fetchBanners();
+    fetchProductsList();
   }, []);
+
+  // Derive category options dynamically from live website navigation menus
+  const navigationCategories = React.useMemo(() => {
+    if (!Array.isArray(menuTree) || menuTree.length === 0) {
+      return [
+        { value: 'Men', label: 'Men', isParent: true },
+        { value: 'Women', label: 'Women', isParent: true },
+        { value: 'Kids', label: 'Kids', isParent: true },
+        { value: 'Home', label: 'Home', isParent: true },
+        { value: 'Beauty', label: 'Beauty', isParent: true },
+        { value: 'Genz', label: 'Genz', isParent: true },
+        { value: 'Studio', label: 'Studio', isParent: true }
+      ];
+    }
+
+    const items = [];
+    menuTree.forEach((menu) => {
+      if (menu.title) {
+        items.push({
+          value: menu.title,
+          label: menu.title,
+          isParent: true,
+          parentTitle: null
+        });
+
+        if (Array.isArray(menu.submenus) && menu.submenus.length > 0) {
+          menu.submenus.forEach((sub) => {
+            if (sub.title) {
+              items.push({
+                value: sub.title,
+                label: `${menu.title} › ${sub.title}`,
+                isParent: false,
+                parentTitle: menu.title
+              });
+            }
+          });
+        }
+      }
+    });
+
+    return items;
+  }, [menuTree]);
+
+  // Open modal to create a new product
+  const openCreateProductModal = () => {
+    setEditingProduct(null);
+    const defaultCat = navigationCategories.length > 0 ? navigationCategories[0].value : 'Women';
+    setProductForm({
+      title: '',
+      category: defaultCat,
+      price: '46.00',
+      compare_at_price: '',
+      stock: 25,
+      tag: 'NEW',
+      is_bestseller: false,
+      is_new: true,
+      image_url: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg',
+      description: '',
+      sizes: ['XS (UK 8)', 'S (UK 10)', 'M (UK 12)', 'L (UK 14)', 'XL (UK 16)'],
+      details: [
+        '100% Super-soft breathable fabric',
+        'Hand-illustrated British boutique print',
+        'Pocket piping and tonal mother-of-pearl buttons',
+        'Machine wash gentle at 30°C'
+      ],
+      status: 'active'
+    });
+    setIsProductModalOpen(true);
+  };
+
+  // Open modal to edit existing product
+  const openEditProductModal = (prod) => {
+    setEditingProduct(prod);
+    setProductForm({
+      title: prod.title || '',
+      category: prod.category || 'Womens',
+      price: String(prod.priceGBP !== undefined ? prod.priceGBP : prod.price?.replace('£', '') || '46.00'),
+      compare_at_price: prod.compareAtPriceGBP ? String(prod.compareAtPriceGBP) : '',
+      stock: prod.stock !== undefined ? prod.stock : 25,
+      tag: prod.tag || '',
+      is_bestseller: Boolean(prod.isBestseller || prod.is_bestseller),
+      is_new: Boolean(prod.isNew || prod.is_new),
+      image_url: prod.image || (prod.images && prod.images[0]) || '',
+      description: prod.description || '',
+      sizes: Array.isArray(prod.sizes) && prod.sizes.length > 0 ? prod.sizes : ['XS (UK 8)', 'S (UK 10)', 'M (UK 12)', 'L (UK 14)', 'XL (UK 16)'],
+      details: Array.isArray(prod.details) && prod.details.length > 0 ? prod.details : [
+        '100% Super-soft breathable fabric',
+        'Hand-illustrated British boutique print',
+        'Pocket piping and tonal mother-of-pearl buttons',
+        'Machine wash gentle at 30°C'
+      ],
+      status: prod.status || 'active'
+    });
+    setIsProductModalOpen(true);
+  };
+
+  // Save (Create or Update) Product to MySQL
+  const handleSaveProduct = async (e) => {
+    if (e) e.preventDefault();
+    if (!productForm.title.trim()) {
+      showToast('Please provide a product title');
+      return;
+    }
+
+    const priceNum = parseFloat(productForm.price) || 45.0;
+    const stockNum = parseInt(productForm.stock, 10) >= 0 ? parseInt(productForm.stock, 10) : 25;
+    const isEdit = Boolean(editingProduct);
+    const endpoint = isEdit
+      ? API_ENDPOINTS.PRODUCT_ITEM(editingProduct.id)
+      : API_ENDPOINTS.PRODUCTS;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const payload = {
+      title: productForm.title.trim(),
+      category: productForm.category,
+      priceGBP: priceNum,
+      compareAtPriceGBP: productForm.compare_at_price ? parseFloat(productForm.compare_at_price) : null,
+      stock: stockNum,
+      tag: productForm.tag ? productForm.tag.trim() : null,
+      isBestseller: productForm.is_bestseller,
+      isNew: productForm.is_new,
+      images: [productForm.image_url],
+      image: productForm.image_url,
+      description: productForm.description,
+      sizes: productForm.sizes,
+      details: productForm.details,
+      status: productForm.status
+    };
+
+    try {
+      const res = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(isEdit ? `Updated "${payload.title}" in MySQL!` : `Added "${payload.title}" to catalog!`);
+        setIsProductModalOpen(false);
+        fetchProductsList();
+      } else {
+        showToast(json.message || 'Failed to save product');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error saving product to backend API');
+    }
+  };
+
+  // Delete product from MySQL
+  const handleDeleteProduct = async () => {
+    if (!deleteProductConfirm) return;
+    try {
+      const res = await fetch(API_ENDPOINTS.PRODUCT_ITEM(deleteProductConfirm.id), {
+        method: 'DELETE'
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(`Product "${deleteProductConfirm.title}" removed from catalog.`);
+        setDeleteProductConfirm(null);
+        fetchProductsList();
+      } else {
+        showToast(json.message || 'Failed to delete product');
+      }
+    } catch (err) {
+      showToast('Error deleting product');
+    }
+  };
+
+  // Upload Product Photo
+  const handleUploadProductPhoto = async (file) => {
+    if (!file) return;
+    setIsUploadingProductImg(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(API_ENDPOINTS.PRODUCTS_UPLOAD, {
+        method: 'POST',
+        body: formData
+      });
+      const json = await res.json();
+      if (json.success && json.url) {
+        setProductForm(prev => ({ ...prev, image_url: json.url }));
+        showToast('Product photo uploaded successfully!');
+      } else {
+        showToast(json.message || 'Image upload failed');
+      }
+    } catch (err) {
+      showToast('Error uploading photo');
+    } finally {
+      setIsUploadingProductImg(false);
+    }
+  };
+
+  // Quick Stock Step (+1 or -1)
+  const handleQuickStock = async (prod, delta) => {
+    const currentStock = prod.stock !== undefined ? prod.stock : 25;
+    const nextStock = Math.max(0, currentStock + delta);
+    try {
+      const res = await fetch(API_ENDPOINTS.PRODUCT_ITEM(prod.id), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock: nextStock })
+      });
+      const json = await res.json();
+      if (json.success) {
+        setProductsList(prev => prev.map(p => p.id === prod.id ? { ...p, stock: nextStock, stockCount: nextStock, stockStatus: nextStock <= 5 ? (nextStock === 0 ? 'Out of Stock' : 'Low Stock') : 'In Stock' } : p));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Toggle Product Status (active / inactive)
+  const handleToggleProductStatus = async (prod) => {
+    const newStatus = prod.status === 'active' ? 'inactive' : 'active';
+    try {
+      const res = await fetch(API_ENDPOINTS.PRODUCT_ITEM(prod.id), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(`Product set to ${newStatus}`);
+        fetchProductsList();
+      }
+    } catch (err) {
+      showToast('Error updating product status');
+    }
+  };
+
+  // Quick Toggle Bestseller for Homepage
+  const handleToggleBestseller = async (prod) => {
+    const currentVal = Boolean(prod.isBestseller || prod.is_bestseller);
+    const nextVal = !currentVal;
+    try {
+      const res = await fetch(API_ENDPOINTS.PRODUCT_ITEM(prod.id), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isBestseller: nextVal, is_bestseller: nextVal ? 1 : 0 })
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(nextVal ? `⭐ Added "${prod.title.slice(0, 24)}..." to Homepage Best Sellers!` : `Removed from Homepage Best Sellers`);
+        setProductsList(prev => prev.map(p => p.id === prod.id ? { ...p, isBestseller: nextVal, is_bestseller: nextVal ? 1 : 0 } : p));
+      }
+    } catch (err) {
+      showToast('Error updating bestseller placement');
+    }
+  };
+
+  // Quick Toggle New In for Homepage
+  const handleToggleNew = async (prod) => {
+    const currentVal = Boolean(prod.isNew || prod.is_new);
+    const nextVal = !currentVal;
+    try {
+      const res = await fetch(API_ENDPOINTS.PRODUCT_ITEM(prod.id), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isNew: nextVal, is_new: nextVal ? 1 : 0 })
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(nextVal ? `✨ Added "${prod.title.slice(0, 24)}..." to Homepage New In!` : `Removed from Homepage New In`);
+        setProductsList(prev => prev.map(p => p.id === prod.id ? { ...p, isNew: nextVal, is_new: nextVal ? 1 : 0 } : p));
+      }
+    } catch (err) {
+      showToast('Error updating new in placement');
+    }
+  };
+
+  // Reset catalog to default 50 products
+  const handleResetCatalog = async () => {
+    if (!window.confirm('Are you sure you want to reset all products back to the original 50 boutique items in MySQL?')) {
+      return;
+    }
+    try {
+      const res = await fetch(API_ENDPOINTS.PRODUCTS_RESET, { method: 'POST' });
+      const json = await res.json();
+      if (json.success) {
+        showToast('Boutique catalog reset to default 50 items!');
+        fetchProductsList();
+      } else {
+        showToast(json.message || 'Failed to reset catalog');
+      }
+    } catch (err) {
+      showToast('Error resetting catalog');
+    }
+  };
 
   // Open modal to create a new banner
   const openCreateBannerModal = () => {
@@ -376,8 +711,8 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
 
     const isEdit = Boolean(editingBanner);
     const endpoint = isEdit
-      ? `http://localhost:5001/api/banners/${editingBanner.id}`
-      : 'http://localhost:5001/api/banners';
+      ? API_ENDPOINTS.BANNER_ITEM(editingBanner.id)
+      : API_ENDPOINTS.BANNERS;
     const method = isEdit ? 'PUT' : 'POST';
 
     try {
@@ -407,7 +742,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
     }
 
     try {
-      const res = await fetch(`http://localhost:5001/api/banners/${id}`, { method: 'DELETE' });
+      const res = await fetch(API_ENDPOINTS.BANNER_ITEM(id), { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
         showToast(`Banner "${title}" deleted.`);
@@ -424,7 +759,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
   const handleToggleBannerStatus = async (banner) => {
     const newStatus = banner.status === 'active' ? 'inactive' : 'active';
     try {
-      const res = await fetch(`http://localhost:5001/api/banners/${banner.id}`, {
+      const res = await fetch(API_ENDPOINTS.BANNER_ITEM(banner.id), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -447,7 +782,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch('http://localhost:5001/api/banners/upload', {
+      const res = await fetch(API_ENDPOINTS.BANNERS_UPLOAD, {
         method: 'POST',
         body: formData
       });
@@ -479,7 +814,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
     setBanners(newBanners);
 
     try {
-      await fetch('http://localhost:5001/api/banners/reorder', {
+      await fetch(API_ENDPOINTS.BANNERS_REORDER, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items })
@@ -540,8 +875,8 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
 
     const isEdit = Boolean(editingMenuItem);
     const endpoint = isEdit
-      ? `http://localhost:5001/api/menu/${editingMenuItem.id}`
-      : 'http://localhost:5001/api/menu';
+      ? API_ENDPOINTS.MENU_ITEM(editingMenuItem.id)
+      : API_ENDPOINTS.MENU;
     const method = isEdit ? 'PUT' : 'POST';
 
     try {
@@ -572,7 +907,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
     }
 
     try {
-      const res = await fetch(`http://localhost:5001/api/menu/${id}`, { method: 'DELETE' });
+      const res = await fetch(API_ENDPOINTS.MENU_ITEM(id), { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
         showToast(`Deleted "${title}" and child submenus.`);
@@ -592,7 +927,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
     }
 
     try {
-      const res = await fetch('http://localhost:5001/api/menu/clear', { method: 'DELETE' });
+      const res = await fetch(API_ENDPOINTS.MENU_CLEAR, { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
         showToast('All default menus removed! You can now add your own menus.');
@@ -608,7 +943,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
   // Toggle Menu Status (Active / Inactive)
   const handleToggleMenuStatus = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5001/api/menu/${id}/toggle`, { method: 'PATCH' });
+      const res = await fetch(API_ENDPOINTS.MENU_TOGGLE(id), { method: 'PATCH' });
       const json = await res.json();
       if (json.success) {
         showToast(json.message || 'Status toggled successfully');
@@ -619,34 +954,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
     }
   };
 
-  // Handle adding new product
-  const handleAddProduct = (e) => {
-    e.preventDefault();
-    if (!newProdTitle.trim()) {
-      showToast('Please enter a product title');
-      return;
-    }
 
-    const priceNum = parseFloat(newProdPrice) || 45.0;
-    const stockNum = parseInt(newProdStock, 10) || 10;
-
-    const newProd = {
-      id: `prod-${Date.now()}`,
-      title: newProdTitle,
-      category: newProdCategory,
-      price: `£${priceNum.toFixed(2)}`,
-      unitsSold: 0,
-      revenue: '£0.00',
-      stockStatus: stockNum <= 5 ? 'Low Stock' : 'In Stock',
-      stockCount: stockNum,
-      image: newProdImage || 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg'
-    };
-
-    setProducts([newProd, ...products]);
-    setIsAddProductOpen(false);
-    setNewProdTitle('');
-    showToast(`Added "${newProdTitle}" to store catalog!`);
-  };
 
   // Handle Order Status Update
   const handleUpdateOrderStatus = (orderId, newFulfillment) => {
@@ -1123,7 +1431,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
               ) : (
                 <button
                   className="topbar-share-btn add-prod-header-btn"
-                  onClick={() => setIsAddProductOpen(true)}
+                  onClick={openCreateProductModal}
                 >
                   <Plus size={15} />
                   <span>Add Product</span>
@@ -1154,7 +1462,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                       onClick={() => handleNavClick('menu', '/admin/menus')}
                       title="Manage Website Menus"
                     >
-                      <Compass size={14} color="#BA6C5A" />
+                      <Compass size={14} color="#901010" />
                       <span>Website Menus</span>
                     </button>
 
@@ -1560,65 +1868,594 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
             )}
 
             {/* ----------------------------------------------------------
-               TAB 3: /admin/products (PRODUCTS CATALOG)
+               TAB 3: /admin/products (DYNAMIC PRODUCTS CATALOG)
                ---------------------------------------------------------- */}
-            {activeNav === 'catalog' && (
-              <div className="menu-manager-container">
-                <div className="overview-header-row mb-4">
-                  <div>
-                    <h2 className="overview-title">Products & Store Catalog</h2>
-                    <p className="overview-subtitle">Manage boutique pyjama sets, stock levels, and inventory</p>
+            {activeNav === 'catalog' && (() => {
+              const activeSource = productsList.length > 0 ? productsList : products;
+              const filteredList = activeSource.filter((prod) => {
+                if (productCategoryFilter !== 'All') {
+                  const catLower = productCategoryFilter.toLowerCase();
+                  const pCat = (prod.category || '').toLowerCase();
+                  const pTitle = (prod.title || '').toLowerCase();
+                  if (!pCat.includes(catLower) && !pTitle.includes(catLower)) return false;
+                }
+                if (productStockFilter === 'In Stock') {
+                  if ((prod.stock !== undefined ? prod.stock : 25) <= 5) return false;
+                } else if (productStockFilter === 'Low Stock') {
+                  const s = prod.stock !== undefined ? prod.stock : 25;
+                  if (s > 5 || s === 0) return false;
+                } else if (productStockFilter === 'Out of Stock') {
+                  const s = prod.stock !== undefined ? prod.stock : 25;
+                  if (s > 0) return false;
+                }
+                if (productHomeFilter === 'Bestsellers') {
+                  if (!prod.isBestseller && !prod.is_bestseller) return false;
+                } else if (productHomeFilter === 'NewIn') {
+                  if (!prod.isNew && !prod.is_new) return false;
+                } else if (productHomeFilter === 'HomepageOnly') {
+                  if (!prod.isBestseller && !prod.is_bestseller && !prod.isNew && !prod.is_new) return false;
+                }
+                if (productSearch.trim()) {
+                  const q = productSearch.toLowerCase();
+                  const matches =
+                    (prod.title && prod.title.toLowerCase().includes(q)) ||
+                    (prod.category && prod.category.toLowerCase().includes(q)) ||
+                    (prod.handle && prod.handle.toLowerCase().includes(q)) ||
+                    (prod.tag && prod.tag.toLowerCase().includes(q)) ||
+                    String(prod.id).includes(q);
+                  if (!matches) return false;
+                }
+                return true;
+              });
+
+              const totalCount = activeSource.length;
+              const inStockCount = activeSource.filter(p => (p.stock !== undefined ? p.stock : 25) > 5).length;
+              const lowStockCount = activeSource.filter(p => {
+                const s = p.stock !== undefined ? p.stock : 25;
+                return s <= 5 && s > 0;
+              }).length;
+              const totalInventoryVal = activeSource.reduce((acc, p) => acc + ((p.priceGBP || 45) * (p.stock !== undefined ? p.stock : 25)), 0);
+
+              return (
+                <div className="menu-manager-container">
+                  {/* Top Title & Action Bar */}
+                  <div className="overview-header-row mb-3">
+                    <div>
+                      <h2 className="overview-title">Products & Store Catalog</h2>
+                      <p className="overview-subtitle">
+                        Live MySQL database management for boutique pyjama sets, stock levels, and store pricing.
+                      </p>
+                    </div>
+
+                    <div className="overview-actions-row">
+                      <button
+                        className="menu-action-btn primary"
+                        onClick={openCreateProductModal}
+                      >
+                        <Plus size={15} />
+                        <span>Add New Product</span>
+                      </button>
+                      <button
+                        className="menu-action-btn secondary"
+                        onClick={fetchProductsList}
+                        title="Reload from MySQL"
+                      >
+                        <RefreshCw size={14} className={isLoadingProducts ? 'spin' : ''} />
+                        <span>Sync</span>
+                      </button>
+                      <button
+                        className="reset-data-btn"
+                        onClick={handleResetCatalog}
+                        title="Reset back to 50 boutique items"
+                      >
+                        <RotateCcw size={14} />
+                        <span>Reset Catalog</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="overview-actions-row">
-                    <button
-                      className="menu-action-btn primary"
-                      onClick={() => setIsAddProductOpen(true)}
-                    >
-                      <Plus size={15} />
-                      <span>Add New Product</span>
-                    </button>
-                    <button
-                      className="reset-data-btn"
-                      onClick={() => setProducts(TOP_SELLING_PRODUCTS)}
-                    >
-                      <RotateCcw size={14} />
-                      <span>Reset Catalog</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="row g-3 mb-4">
-                  {products.map((prod) => (
-                    <div key={prod.id} className="col-12 col-md-6 col-lg-3">
-                      <div className="summary-card white" style={{ height: '100%', padding: '16px' }}>
-                        <img
-                          src={prod.image}
-                          alt={prod.title}
-                          style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '10px', marginBottom: '12px' }}
-                          onError={(e) => {
-                            e.target.src = 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg';
-                          }}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <span style={{ fontSize: '0.72rem', color: '#6B7280', fontWeight: '600' }}>{prod.category}</span>
-                          <span className={`product-stock-tag ${prod.stockStatus === 'Low Stock' ? 'low' : 'ok'}`}>
-                            {prod.stockStatus === 'Low Stock' ? `Only ${prod.stockCount} Left` : `${prod.stockCount} In Stock`}
-                          </span>
+                  {/* Summary Metric Cards */}
+                  <div className="row g-3 mb-4">
+                    <div className="col-6 col-md-3">
+                      <div className="summary-card white" style={{ padding: '14px 18px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.74rem', color: '#6B7280', fontWeight: '600' }}>TOTAL PRODUCTS</span>
+                          <Package size={16} color="#901010" />
                         </div>
-                        <h4 style={{ fontSize: '0.88rem', fontWeight: '700', color: '#111827', margin: '0 0 8px', lineHeight: '1.3' }}>
-                          {prod.title}
-                        </h4>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid #F3F4F6' }}>
-                          <strong style={{ fontSize: '1.1rem', color: '#BA6C5A' }}>{prod.price}</strong>
-                          <span style={{ fontSize: '0.76rem', color: '#4B5563' }}>{prod.unitsSold} units sold</span>
+                        <div style={{ fontSize: '1.45rem', fontWeight: '800', color: '#111827', marginTop: '4px' }}>
+                          {totalCount}
                         </div>
+                        <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '600' }}>Live in database</span>
                       </div>
                     </div>
-                  ))}
+
+                    <div className="col-6 col-md-3">
+                      <div className="summary-card white" style={{ padding: '14px 18px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.74rem', color: '#6B7280', fontWeight: '600' }}>HEALTHY STOCK</span>
+                          <CheckCircle2 size={16} color="#059669" />
+                        </div>
+                        <div style={{ fontSize: '1.45rem', fontWeight: '800', color: '#059669', marginTop: '4px' }}>
+                          {inStockCount}
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: '#6B7280' }}>&gt; 5 items in inventory</span>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-3">
+                      <div className="summary-card white" style={{ padding: '14px 18px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.74rem', color: '#6B7280', fontWeight: '600' }}>LOW STOCK ALERT</span>
+                          <Tag size={16} color="#D97706" />
+                        </div>
+                        <div style={{ fontSize: '1.45rem', fontWeight: '800', color: '#D97706', marginTop: '4px' }}>
+                          {lowStockCount}
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: '#D97706', fontWeight: '600' }}>Needs replenishment</span>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-3">
+                      <div className="summary-card white" style={{ padding: '14px 18px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.74rem', color: '#6B7280', fontWeight: '600' }}>CATALOG INVENTORY VALUE</span>
+                          <ShoppingBag size={16} color="#901010" />
+                        </div>
+                        <div style={{ fontSize: '1.45rem', fontWeight: '800', color: '#901010', marginTop: '4px' }}>
+                          £{totalInventoryVal.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: '#6B7280' }}>Estimated retail value</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Filter & Search Toolbar */}
+                  <div className="catalog-toolbar-row">
+                    <div className="catalog-search-input-wrap">
+                      <Search size={15} />
+                      <input
+                        type="text"
+                        className="catalog-search-input"
+                        placeholder="Search products by title, category, tag or SKU..."
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                      />
+                      {productSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setProductSearch('')}
+                          style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: 0 }}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="catalog-filter-group">
+                      {/* Category Filter (Dynamic from Website Navigation) */}
+                      <select
+                        className="catalog-select"
+                        value={productCategoryFilter}
+                        onChange={(e) => setProductCategoryFilter(e.target.value)}
+                      >
+                        <option value="All">All Navigation Categories ({navigationCategories.length})</option>
+                        {navigationCategories.map((cat) => (
+                          <option key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Homepage Placement Filter */}
+                      <select
+                        className="catalog-select"
+                        value={productHomeFilter}
+                        onChange={(e) => setProductHomeFilter(e.target.value)}
+                        style={{ fontWeight: productHomeFilter !== 'All' ? 700 : 500 }}
+                      >
+                        <option value="All">All Homepage Placements</option>
+                        <option value="HomepageOnly">🏠 Any Homepage Featured</option>
+                        <option value="Bestsellers">⭐ Best Sellers Tab</option>
+                        <option value="NewIn">✨ New In Tab</option>
+                      </select>
+
+                      {/* Stock Filter */}
+                      <select
+                        className="catalog-select"
+                        value={productStockFilter}
+                        onChange={(e) => setProductStockFilter(e.target.value)}
+                      >
+                        <option value="All">All Stock Levels</option>
+                        <option value="In Stock">In Stock (&gt; 5)</option>
+                        <option value="Low Stock">Low Stock (≤ 5)</option>
+                        <option value="Out of Stock">Out of Stock (0)</option>
+                      </select>
+
+                      {/* View Mode Toggle */}
+                      <div className="view-mode-toggle">
+                        <button
+                          type="button"
+                          className={`view-mode-btn ${productViewMode === 'grid' ? 'active' : ''}`}
+                          onClick={() => setProductViewMode('grid')}
+                          title="Grid View"
+                        >
+                          <LayoutGrid size={14} />
+                          <span>Grid</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`view-mode-btn ${productViewMode === 'table' ? 'active' : ''}`}
+                          onClick={() => setProductViewMode('table')}
+                          title="Table View"
+                        >
+                          <Menu size={14} />
+                          <span>Table</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Empty state if no filtered items */}
+                  {filteredList.length === 0 && (
+                    <div className="summary-card white text-center py-5" style={{ borderRadius: '12px' }}>
+                      <Package size={44} color="#D1D5DB" className="mx-auto mb-2" />
+                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#374151', margin: '0 0 6px' }}>No products match your search or filters</h4>
+                      <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '0 0 16px' }}>Try clearing filters or adding a new boutique item.</p>
+                      <button
+                        className="menu-action-btn secondary"
+                        onClick={() => { setProductSearch(''); setProductCategoryFilter('All'); setProductStockFilter('All'); }}
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  )}
+
+                  {/* GRID VIEW */}
+                  {productViewMode === 'grid' && filteredList.length > 0 && (
+                    <div className="row g-3 mb-4">
+                      {filteredList.map((prod) => {
+                        const stockVal = prod.stock !== undefined ? prod.stock : 25;
+                        const stockClass = stockVal === 0 ? 'out' : stockVal <= 5 ? 'low' : 'ok';
+                        const stockLabel = stockVal === 0 ? 'Out of Stock' : stockVal <= 5 ? `Low Stock (${stockVal})` : `${stockVal} in stock`;
+                        const prodImg = prod.image || (prod.images && prod.images[0]) || 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg';
+
+                        return (
+                          <div key={prod.id} className="col-12 col-sm-6 col-lg-4 col-xl-3">
+                            <div className="admin-prod-card">
+                              <div className="admin-prod-img-wrap">
+                                <img
+                                  src={prodImg}
+                                  alt={prod.title}
+                                  className="admin-prod-img"
+                                  onError={(e) => {
+                                    e.target.src = 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg';
+                                  }}
+                                />
+                                {prod.tag && (
+                                  <span className="admin-prod-badge-tag">{prod.tag}</span>
+                                )}
+                                <span
+                                  className={`admin-prod-status-dot ${prod.status === 'active' ? 'active' : 'inactive'}`}
+                                  onClick={() => handleToggleProductStatus(prod)}
+                                  title="Click to toggle Active / Inactive"
+                                  style={{ cursor: 'pointer' }}
+                                >
+                                  <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: prod.status === 'active' ? '#10B981' : '#9CA3AF' }} />
+                                  {prod.status === 'active' ? 'Active' : 'Draft'}
+                                </span>
+                              </div>
+
+                              <div className="admin-prod-body">
+                                <span className="admin-prod-cat">{prod.category}</span>
+                                <h4 className="admin-prod-title" title={prod.title}>
+                                  {prod.title}
+                                </h4>
+
+                                <div className="admin-prod-meta-row">
+                                  <div>
+                                    <span className="admin-prod-price">
+                                      {prod.price || `£${(prod.priceGBP || 45).toFixed(2)}`}
+                                    </span>
+                                    {prod.compareAtPriceGBP && (
+                                      <span className="admin-prod-compare-price">
+                                        £{prod.compareAtPriceGBP.toFixed(2)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className={`admin-prod-stock-pill ${stockClass}`}>
+                                    {stockLabel}
+                                  </span>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                  <span style={{ fontSize: '0.74rem', color: '#6B7280' }}>Quick stock adj:</span>
+                                  <div className="admin-prod-stepper">
+                                    <button
+                                      type="button"
+                                      className="admin-prod-step-btn"
+                                      onClick={() => handleQuickStock(prod, -1)}
+                                      title="Decrease stock by 1"
+                                    >
+                                      -
+                                    </button>
+                                    <span style={{ fontSize: '0.78rem', fontWeight: 700, minWidth: '20px', textAlign: 'center' }}>
+                                      {stockVal}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      className="admin-prod-step-btn"
+                                      onClick={() => handleQuickStock(prod, 1)}
+                                      title="Increase stock by 1"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Homepage placement quick toggles */}
+                                <div style={{ display: 'flex', gap: '6px', margin: '8px 0 10px', flexWrap: 'wrap' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleBestseller(prod)}
+                                    style={{
+                                      fontSize: '0.68rem',
+                                      fontWeight: 700,
+                                      padding: '3px 8px',
+                                      borderRadius: '6px',
+                                      border: (prod.isBestseller || prod.is_bestseller) ? '1px solid #FCD34D' : '1px dashed #D1D5DB',
+                                      backgroundColor: (prod.isBestseller || prod.is_bestseller) ? '#FEF3C7' : '#FFFFFF',
+                                      color: (prod.isBestseller || prod.is_bestseller) ? '#B45309' : '#6B7280',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}
+                                    title="Click to toggle Homepage Best Sellers"
+                                  >
+                                    <span>{(prod.isBestseller || prod.is_bestseller) ? '★' : '☆'}</span>
+                                    <span>Best Seller</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleNew(prod)}
+                                    style={{
+                                      fontSize: '0.68rem',
+                                      fontWeight: 700,
+                                      padding: '3px 8px',
+                                      borderRadius: '6px',
+                                      border: (prod.isNew || prod.is_new) ? '1px solid #A7F3D0' : '1px dashed #D1D5DB',
+                                      backgroundColor: (prod.isNew || prod.is_new) ? '#ECFDF5' : '#FFFFFF',
+                                      color: (prod.isNew || prod.is_new) ? '#047857' : '#6B7280',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}
+                                    title="Click to toggle Homepage New In"
+                                  >
+                                    <span>{(prod.isNew || prod.is_new) ? '✦' : '✧'}</span>
+                                    <span>New In</span>
+                                  </button>
+                                </div>
+
+                                <div className="admin-prod-footer">
+                                  <a
+                                    href={`/product/${prod.id}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="menu-row-btn"
+                                    title="View product in storefront"
+                                  >
+                                    <ExternalLink size={13} />
+                                    <span>Store</span>
+                                  </a>
+
+                                  <div className="admin-prod-actions">
+                                    <button
+                                      type="button"
+                                      className="menu-row-btn"
+                                      onClick={() => openEditProductModal(prod)}
+                                      title="Edit product details"
+                                    >
+                                      <Pencil size={13} color="#2563EB" />
+                                      <span>Edit</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="menu-row-btn delete"
+                                      onClick={() => setDeleteProductConfirm(prod)}
+                                      title="Delete product from database"
+                                    >
+                                      <Trash2 size={13} color="#DC2626" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* TABLE VIEW */}
+                  {productViewMode === 'table' && filteredList.length > 0 && (
+                    <div className="summary-card white p-0 mb-4" style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                      <div className="table-responsive">
+                        <table className="menu-manager-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #ECEEF1' }}>
+                              <th style={{ padding: '12px 16px', fontSize: '0.74rem', color: '#6B7280', textAlign: 'left' }}>PRODUCT</th>
+                              <th style={{ padding: '12px 14px', fontSize: '0.74rem', color: '#6B7280', textAlign: 'left' }}>CATEGORY</th>
+                              <th style={{ padding: '12px 14px', fontSize: '0.74rem', color: '#6B7280', textAlign: 'left' }}>PRICE</th>
+                              <th style={{ padding: '12px 14px', fontSize: '0.74rem', color: '#6B7280', textAlign: 'left' }}>STOCK</th>
+                              <th style={{ padding: '12px 14px', fontSize: '0.74rem', color: '#6B7280', textAlign: 'left' }}>HOMEPAGE FEATURE</th>
+                              <th style={{ padding: '12px 14px', fontSize: '0.74rem', color: '#6B7280', textAlign: 'left' }}>TAG</th>
+                              <th style={{ padding: '12px 14px', fontSize: '0.74rem', color: '#6B7280', textAlign: 'left' }}>STATUS</th>
+                              <th style={{ padding: '12px 16px', fontSize: '0.74rem', color: '#6B7280', textAlign: 'right' }}>ACTIONS</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredList.map((prod) => {
+                              const stockVal = prod.stock !== undefined ? prod.stock : 25;
+                              const stockClass = stockVal === 0 ? 'out' : stockVal <= 5 ? 'low' : 'ok';
+                              const prodImg = prod.image || (prod.images && prod.images[0]) || 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg';
+
+                              return (
+                                <tr key={prod.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                                  <td style={{ padding: '12px 16px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                      <img
+                                        src={prodImg}
+                                        alt={prod.title}
+                                        style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '8px' }}
+                                        onError={(e) => {
+                                          e.target.src = 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg';
+                                        }}
+                                      />
+                                      <div>
+                                        <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#111827', maxWidth: '280px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          {prod.title}
+                                        </div>
+                                        <span style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>ID: {prod.id}</span>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td style={{ padding: '12px 14px', fontSize: '0.8rem', color: '#4B5563', fontWeight: 600 }}>
+                                    {prod.category}
+                                  </td>
+                                  <td style={{ padding: '12px 14px', fontSize: '0.85rem', fontWeight: 800, color: '#901010' }}>
+                                    {prod.price || `£${(prod.priceGBP || 45).toFixed(2)}`}
+                                  </td>
+                                  <td style={{ padding: '12px 14px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span className={`admin-prod-stock-pill ${stockClass}`}>
+                                        {stockVal} units
+                                      </span>
+                                      <div className="admin-prod-stepper">
+                                        <button
+                                          type="button"
+                                          className="admin-prod-step-btn"
+                                          onClick={() => handleQuickStock(prod, -1)}
+                                        >
+                                          -
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="admin-prod-step-btn"
+                                          onClick={() => handleQuickStock(prod, 1)}
+                                        >
+                                          +
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td style={{ padding: '12px 14px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleToggleBestseller(prod)}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          fontSize: '0.68rem',
+                                          fontWeight: 700,
+                                          padding: '2px 8px',
+                                          borderRadius: '6px',
+                                          border: (prod.isBestseller || prod.is_bestseller) ? '1px solid #FCD34D' : '1px dashed #D1D5DB',
+                                          backgroundColor: (prod.isBestseller || prod.is_bestseller) ? '#FEF3C7' : '#FFFFFF',
+                                          color: (prod.isBestseller || prod.is_bestseller) ? '#B45309' : '#9CA3AF',
+                                          cursor: 'pointer'
+                                        }}
+                                        title="Click to toggle Homepage Best Sellers"
+                                      >
+                                        <span>{(prod.isBestseller || prod.is_bestseller) ? '★' : '☆'}</span>
+                                        <span>Best Seller</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleToggleNew(prod)}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          fontSize: '0.68rem',
+                                          fontWeight: 700,
+                                          padding: '2px 8px',
+                                          borderRadius: '6px',
+                                          border: (prod.isNew || prod.is_new) ? '1px solid #A7F3D0' : '1px dashed #D1D5DB',
+                                          backgroundColor: (prod.isNew || prod.is_new) ? '#ECFDF5' : '#FFFFFF',
+                                          color: (prod.isNew || prod.is_new) ? '#047857' : '#9CA3AF',
+                                          cursor: 'pointer'
+                                        }}
+                                        title="Click to toggle Homepage New In"
+                                      >
+                                        <span>{(prod.isNew || prod.is_new) ? '✦' : '✧'}</span>
+                                        <span>New In</span>
+                                      </button>
+                                    </div>
+                                  </td>
+                                  <td style={{ padding: '12px 14px' }}>
+                                    {prod.tag ? (
+                                      <span style={{ fontSize: '0.68rem', fontWeight: 700, backgroundColor: '#FDF2F2', color: '#901010', padding: '3px 8px', borderRadius: '999px' }}>
+                                        {prod.tag}
+                                      </span>
+                                    ) : (
+                                      <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>—</span>
+                                    )}
+                                  </td>
+                                  <td style={{ padding: '12px 14px' }}>
+                                    <button
+                                      type="button"
+                                      className={`status-toggle-pill ${prod.status === 'active' ? 'active' : 'inactive'}`}
+                                      onClick={() => handleToggleProductStatus(prod)}
+                                      title="Toggle status"
+                                    >
+                                      <span className="status-dot" />
+                                      <span>{prod.status === 'active' ? 'Active' : 'Draft'}</span>
+                                    </button>
+                                  </td>
+                                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                                    <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                      <a
+                                        href={`/product/${prod.id}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="menu-row-btn"
+                                        title="View on store"
+                                      >
+                                        <ExternalLink size={13} />
+                                      </a>
+                                      <button
+                                        type="button"
+                                        className="menu-row-btn"
+                                        onClick={() => openEditProductModal(prod)}
+                                        title="Edit product"
+                                      >
+                                        <Pencil size={13} color="#2563EB" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="menu-row-btn delete"
+                                        onClick={() => setDeleteProductConfirm(prod)}
+                                        title="Delete product"
+                                      >
+                                        <Trash2 size={13} color="#DC2626" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* ----------------------------------------------------------
                TAB 4: /admin/menus (DYNAMIC WEBSITE NAVIGATION)
@@ -1697,7 +2534,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                   {/* <div className="col-6 col-md-3">
                     <div className="menu-stat-card">
                       <span className="menu-stat-label">MYSQL DATABASE</span>
-                      <div className="menu-stat-value" style={{ color: '#BA6C5A' }}>
+                      <div className="menu-stat-value" style={{ color: '#901010' }}>
                         ecomdb.website_menus
                       </div>
                       <span className="menu-stat-sub">Connected on Port 3306</span>
@@ -1960,7 +2797,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                             <td>{cust.location}</td>
                             <td>{cust.joinedDate}</td>
                             <td><strong>{cust.ordersCount} Orders</strong></td>
-                            <td><strong style={{ color: '#BA6C5A' }}>{cust.totalSpent}</strong></td>
+                            <td><strong style={{ color: '#901010' }}>{cust.totalSpent}</strong></td>
                             <td>
                               <span className="product-stock-tag ok">{cust.status}</span>
                             </td>
@@ -2075,7 +2912,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                         {discountsList.map((disc) => (
                           <tr key={disc.id}>
                             <td>
-                              <strong style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: '#BA6C5A', backgroundColor: '#FDF5F3', padding: '3px 8px', borderRadius: '6px' }}>
+                              <strong style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: '#901010', backgroundColor: '#FDF2F2', padding: '3px 8px', borderRadius: '6px' }}>
                                 {disc.code}
                               </strong>
                             </td>
@@ -2133,7 +2970,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                     <div className="col-12 col-lg-6">
                       <div className="summary-card white p-4 h-100">
                         <div className="d-flex align-items-center gap-2 mb-3">
-                          <Globe size={18} color="#BA6C5A" />
+                          <Globe size={18} color="#901010" />
                           <h4 style={{ fontSize: '0.98rem', fontWeight: '700', margin: 0 }}>Brand & Logo Identity</h4>
                         </div>
                         <p style={{ fontSize: '0.82rem', color: '#6B7280', marginBottom: '16px' }}>
@@ -2170,8 +3007,8 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                             <label
                               className="btn btn-sm"
                               style={{
-                                backgroundColor: '#FDF5F3',
-                                color: '#BA6C5A',
+                                backgroundColor: '#FDF2F2',
+                                color: '#901010',
                                 border: '1px solid rgba(186, 108, 90, 0.3)',
                                 borderRadius: '6px',
                                 padding: '3px 10px',
@@ -2212,7 +3049,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                         {siteSettings.logo_url && (
                           <div className="mb-3 p-3" style={{ background: '#FAF7F5', borderRadius: '8px', border: '1px dashed #E0D6CE' }}>
                             <div className="d-flex align-items-center justify-content-between mb-2">
-                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#BA6C5A', textTransform: 'uppercase' }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#901010', textTransform: 'uppercase' }}>
                                 Logo Preview:
                               </span>
                               <span style={{ fontSize: '0.7rem', color: '#888' }}>
@@ -2237,8 +3074,8 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                             <label
                               className="btn btn-sm"
                               style={{
-                                backgroundColor: '#FDF5F3',
-                                color: '#BA6C5A',
+                                backgroundColor: '#FDF2F2',
+                                color: '#901010',
                                 border: '1px solid rgba(186, 108, 90, 0.3)',
                                 borderRadius: '6px',
                                 padding: '3px 10px',
@@ -2278,7 +3115,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                         {/* Live Favicon Preview */}
                         {siteSettings.favicon_url && (
                           <div className="mb-3 p-3" style={{ background: '#FAF7F5', borderRadius: '8px', border: '1px dashed #E0D6CE' }}>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#BA6C5A', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#901010', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
                               Browser Tab Preview:
                             </span>
                             <div style={{
@@ -2312,7 +3149,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                     <div className="col-12 col-lg-6">
                       <div className="summary-card white p-4 h-100">
                         <div className="d-flex align-items-center gap-2 mb-3">
-                          <Phone size={18} color="#BA6C5A" />
+                          <Phone size={18} color="#901010" />
                           <h4 style={{ fontSize: '0.98rem', fontWeight: '700', margin: 0 }}>Contact & Customer Care</h4>
                         </div>
                         <p style={{ fontSize: '0.82rem', color: '#6B7280', marginBottom: '16px' }}>
@@ -2359,7 +3196,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                     <div className="col-12 col-lg-6">
                       <div className="summary-card white p-4 h-100">
                         <div className="d-flex align-items-center gap-2 mb-3">
-                          <MapPin size={18} color="#BA6C5A" />
+                          <MapPin size={18} color="#901010" />
                           <h4 style={{ fontSize: '0.98rem', fontWeight: '700', margin: 0 }}>Store & Business Address</h4>
                         </div>
                         <p style={{ fontSize: '0.82rem', color: '#6B7280', marginBottom: '16px' }}>
@@ -2423,7 +3260,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                     <div className="col-12 col-lg-6">
                       <div className="summary-card white p-4 h-100">
                         <div className="d-flex align-items-center gap-2 mb-3">
-                          <Share2 size={18} color="#BA6C5A" />
+                          <Share2 size={18} color="#901010" />
                           <h4 style={{ fontSize: '0.98rem', fontWeight: '700', margin: 0 }}>Social Media Handles</h4>
                         </div>
                         <p style={{ fontSize: '0.82rem', color: '#6B7280', marginBottom: '16px' }}>
@@ -2589,8 +3426,8 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                         <div style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>Total Banners</div>
                         <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1F2937' }}>{banners.length}</div>
                       </div>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#FDF5F3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <ImageIcon size={20} color="#BA6C5A" />
+                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#FDF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ImageIcon size={20} color="#901010" />
                       </div>
                     </div>
                   </div>
@@ -2611,7 +3448,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                     <div className="summary-card white p-3 d-flex align-items-center justify-content-between">
                       <div>
                         <div style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>Storefront Preview</div>
-                        <a href="/" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.84rem', fontWeight: 600, color: '#BA6C5A', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <a href="/" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.84rem', fontWeight: 600, color: '#901010', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <span>View Live Slides</span>
                           <ExternalLink size={13} />
                         </a>
@@ -2626,8 +3463,8 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                 {/* Banners List / Grid */}
                 {banners.length === 0 ? (
                   <div className="summary-card white p-5 text-center">
-                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#FDF5F3', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                      <ImageIcon size={32} color="#BA6C5A" />
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#FDF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                      <ImageIcon size={32} color="#901010" />
                     </div>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1F2937', marginBottom: '8px' }}>No Hero Banners Found</h3>
                     <p style={{ fontSize: '0.88rem', color: '#6B7280', maxWidth: '420px', margin: '0 auto 20px' }}>
@@ -2745,7 +3582,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                             <div className="d-flex align-items-center gap-3" style={{ fontSize: '0.78rem' }}>
                               <span style={{ color: '#4B5563', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                 <span style={{ fontWeight: 600 }}>CTA:</span>
-                                <span style={{ backgroundColor: '#F3F4F6', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, color: '#BA6C5A' }}>
+                                <span style={{ backgroundColor: '#F3F4F6', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, color: '#901010' }}>
                                   {banner.cta_text || 'SHOP NOW'}
                                 </span>
                               </span>
@@ -2916,94 +3753,6 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
         </div>
       )}
 
-      {/* B. ADD PRODUCT MODAL */}
-      {isAddProductOpen && (
-        <div className="oripio-modal-backdrop" onClick={() => setIsAddProductOpen(false)}>
-          <div className="oripio-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="oripio-modal-header">
-              <h3 className="oripio-modal-title">Add New Product to Boutique</h3>
-              <button className="oripio-modal-close" onClick={() => setIsAddProductOpen(false)}>
-                <X size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleAddProduct}>
-              <div className="oripio-modal-body">
-                <div className="oripio-form-group">
-                  <label className="oripio-form-label">Product Name</label>
-                  <input
-                    type="text"
-                    className="oripio-form-input"
-                    placeholder="e.g. Vintage Floral Silk Satin Pyjama Set"
-                    value={newProdTitle}
-                    onChange={(e) => setNewProdTitle(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="row g-2">
-                  <div className="col-6">
-                    <div className="oripio-form-group">
-                      <label className="oripio-form-label">Category</label>
-                      <select
-                        className="oripio-form-input"
-                        value={newProdCategory}
-                        onChange={(e) => setNewProdCategory(e.target.value)}
-                      >
-                        <option value="Womens Pyjamas">Womens Pyjamas</option>
-                        <option value="Sophie Collab">Sophie Collab</option>
-                        <option value="Mens Nightwear">Mens Nightwear</option>
-                        <option value="Robes & Gowns">Robes & Gowns</option>
-                        <option value="Short Sets">Short Sets</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="col-6">
-                    <div className="oripio-form-group">
-                      <label className="oripio-form-label">Price (£ GBP)</label>
-                      <input
-                        type="number"
-                        step="0.50"
-                        className="oripio-form-input"
-                        placeholder="52.00"
-                        value={newProdPrice}
-                        onChange={(e) => setNewProdPrice(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="oripio-form-group">
-                  <label className="oripio-form-label">Stock Quantity</label>
-                  <input
-                    type="number"
-                    className="oripio-form-input"
-                    placeholder="25"
-                    value={newProdStock}
-                    onChange={(e) => setNewProdStock(e.target.value)}
-                  />
-                </div>
-                <div className="oripio-form-group">
-                  <label className="oripio-form-label">Product Image URL</label>
-                  <input
-                    type="url"
-                    className="oripio-form-input"
-                    placeholder="https://www.theirnibs.com/cdn/shop/files/..."
-                    value={newProdImage}
-                    onChange={(e) => setNewProdImage(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="oripio-modal-footer">
-                <button type="button" className="oripio-btn-secondary" onClick={() => setIsAddProductOpen(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="oripio-btn-primary">
-                  Publish Product
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* C. ORDER DETAILS / INVOICE MODAL */}
       {selectedOrderModal && (
@@ -3256,8 +4005,8 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                     <label
                       className="btn btn-sm"
                       style={{
-                        backgroundColor: '#FDF5F3',
-                        color: '#BA6C5A',
+                        backgroundColor: '#FDF2F2',
+                        color: '#901010',
                         border: '1px solid rgba(186, 108, 90, 0.3)',
                         borderRadius: '6px',
                         padding: '3px 10px',
@@ -3413,6 +4162,333 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DYNAMIC PRODUCT ADD / EDIT MODAL */}
+      {isProductModalOpen && (
+        <div className="oripio-modal-backdrop" onClick={() => setIsProductModalOpen(false)}>
+          <div className="oripio-modal-box" style={{ maxWidth: '680px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
+            <div className="oripio-modal-header">
+              <div>
+                <h3 className="oripio-modal-title">
+                  {editingProduct ? 'Edit Boutique Product' : 'Add New Product to Catalog'}
+                </h3>
+                <p className="oripio-modal-desc">
+                  Live MySQL synchronization for prices, inventory levels, photography, and store visibility.
+                </p>
+              </div>
+              <button className="oripio-modal-close" onClick={() => setIsProductModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="oripio-modal-body" style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
+                {/* Title */}
+                <div className="oripio-form-group">
+                  <label className="oripio-form-label">
+                    Product Title <span style={{ color: '#E11D48' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="oripio-form-input"
+                    value={productForm.title}
+                    onChange={(e) => setProductForm({ ...productForm, title: e.target.value })}
+                    placeholder="e.g. Womens Silky Satin Long Pyjama Set In Blush Peach"
+                    required
+                  />
+                </div>
+
+                {/* Category & Tag */}
+                <div className="row g-2">
+                  <div className="col-12 col-sm-6">
+                    <div className="oripio-form-group">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <label className="oripio-form-label" style={{ margin: 0 }}>
+                          Category <span style={{ color: '#E11D48' }}>*</span>
+                        </label>
+                        <span style={{ fontSize: '0.68rem', color: '#901010', fontWeight: 600 }}>
+                          Navigation Menus
+                        </span>
+                      </div>
+                      <select
+                        className="oripio-form-input"
+                        value={productForm.category}
+                        onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                        required
+                      >
+                        {navigationCategories.map((cat) => (
+                          <option key={cat.value} value={cat.value}>
+                            {cat.isParent ? `📁 ${cat.label}` : `    ↳ ${cat.label}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="col-12 col-sm-6">
+                    <div className="oripio-form-group">
+                      <label className="oripio-form-label">Promotional Tag (Badge)</label>
+                      <input
+                        type="text"
+                        className="oripio-form-input"
+                        value={productForm.tag}
+                        onChange={(e) => setProductForm({ ...productForm, tag: e.target.value })}
+                        placeholder="e.g. BESTSELLER, NEW IN, EXCLUSIVE"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Price, Compare Price, Stock */}
+                <div className="row g-2">
+                  <div className="col-12 col-sm-4">
+                    <div className="oripio-form-group">
+                      <label className="oripio-form-label">
+                        Retail Price (£ GBP) <span style={{ color: '#E11D48' }}>*</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        className="oripio-form-input"
+                        value={productForm.price}
+                        onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                        placeholder="48.00"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="col-6 col-sm-4">
+                    <div className="oripio-form-group">
+                      <label className="oripio-form-label">Compare Price (£)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        className="oripio-form-input"
+                        value={productForm.compare_at_price}
+                        onChange={(e) => setProductForm({ ...productForm, compare_at_price: e.target.value })}
+                        placeholder="e.g. 58.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="col-6 col-sm-4">
+                    <div className="oripio-form-group">
+                      <label className="oripio-form-label">Inventory Stock Units</label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="oripio-form-input"
+                        value={productForm.stock}
+                        onChange={(e) => setProductForm({ ...productForm, stock: parseInt(e.target.value, 10) || 0 })}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Product Image Section */}
+                <div className="oripio-form-group">
+                  <label className="oripio-form-label">
+                    Product Image <span style={{ color: '#E11D48' }}>*</span>
+                  </label>
+                  
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="url"
+                      className="oripio-form-input"
+                      value={productForm.image_url}
+                      onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
+                      placeholder="Paste image URL (https://...)"
+                      required
+                    />
+                    
+                    <label
+                      className="menu-action-btn secondary"
+                      style={{ cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      title="Upload photo from computer"
+                    >
+                      <Upload size={14} />
+                      <span>{isUploadingProductImg ? 'Uploading...' : 'Upload'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleUploadProductPhoto(e.target.files[0]);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Image Preview Box */}
+                  {productForm.image_url && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', backgroundColor: '#F9FAFB', borderRadius: '8px', border: '1px solid #ECEEF1' }}>
+                      <img
+                        src={productForm.image_url}
+                        alt="Preview"
+                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                      <div style={{ overflow: 'hidden' }}>
+                        <span style={{ fontSize: '0.74rem', fontWeight: 600, color: '#374151', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '400px' }}>
+                          {productForm.image_url}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 600 }}>Ready for store display</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Available Sizes */}
+                <div className="oripio-form-group">
+                  <label className="oripio-form-label">Available Sizes</label>
+                  <p style={{ fontSize: '0.72rem', color: '#6B7280', margin: '0 0 6px' }}>Click to select/unselect sizes for this product:</p>
+                  <div className="size-chips-wrap">
+                    {['XS (UK 8)', 'S (UK 10)', 'M (UK 12)', 'L (UK 14)', 'XL (UK 16)', 'XXL (UK 18)', '3XL', 'One Size'].map((sz) => {
+                      const isSelected = productForm.sizes && productForm.sizes.includes(sz);
+                      return (
+                        <button
+                          key={sz}
+                          type="button"
+                          className={`size-chip-btn ${isSelected ? 'selected' : ''}`}
+                          onClick={() => {
+                            const cur = productForm.sizes || [];
+                            const next = isSelected ? cur.filter(s => s !== sz) : [...cur, sz];
+                            setProductForm({ ...productForm, sizes: next });
+                          }}
+                        >
+                          {isSelected && <Check size={12} style={{ display: 'inline', marginRight: 4 }} />}
+                          {sz}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="oripio-form-group">
+                  <label className="oripio-form-label">Product Description</label>
+                  <textarea
+                    rows={3}
+                    className="oripio-form-input"
+                    value={productForm.description}
+                    onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                    placeholder="Whimsical and wonderfully nostalgic print inspired by British botanical art..."
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+
+                {/* Homepage Showcase & Visibility */}
+                <div style={{ backgroundColor: '#F9FAFB', padding: '14px 16px', borderRadius: '10px', border: '1px solid #E5E7EB', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#111827', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🏠 Homepage Placement & Visibility</span>
+                  </div>
+                  <div className="row g-2 align-items-center">
+                    <div className="col-12 col-sm-4">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, color: '#374151' }}>
+                        <input
+                          type="checkbox"
+                          checked={productForm.is_bestseller}
+                          onChange={(e) => setProductForm({ ...productForm, is_bestseller: e.target.checked })}
+                        />
+                        <span>⭐ Show in "Best Sellers"</span>
+                      </label>
+                    </div>
+
+                    <div className="col-12 col-sm-4">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, color: '#374151' }}>
+                        <input
+                          type="checkbox"
+                          checked={productForm.is_new}
+                          onChange={(e) => setProductForm({ ...productForm, is_new: e.target.checked })}
+                        />
+                        <span>✨ Show in "New In"</span>
+                      </label>
+                    </div>
+
+                    <div className="col-12 col-sm-4">
+                      <select
+                        className="oripio-form-input"
+                        style={{ padding: '6px 10px', fontSize: '0.78rem' }}
+                        value={productForm.status}
+                        onChange={(e) => setProductForm({ ...productForm, status: e.target.value })}
+                      >
+                        <option value="active">Active (Visible)</option>
+                        <option value="inactive">Inactive (Draft / Hidden)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="oripio-modal-footer">
+                <button
+                  type="button"
+                  className="oripio-btn-secondary"
+                  onClick={() => setIsProductModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="menu-action-btn primary"
+                  style={{ padding: '8px 22px' }}
+                >
+                  <Check size={16} />
+                  <span>{editingProduct ? 'Save Changes' : 'Create Product'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE PRODUCT CONFIRMATION MODAL */}
+      {deleteProductConfirm && (
+        <div className="oripio-modal-backdrop" onClick={() => setDeleteProductConfirm(null)}>
+          <div className="oripio-modal-box" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="oripio-modal-header">
+              <h3 className="oripio-modal-title" style={{ color: '#DC2626' }}>
+                Delete Product?
+              </h3>
+              <button className="oripio-modal-close" onClick={() => setDeleteProductConfirm(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="oripio-modal-body">
+              <p style={{ fontSize: '0.86rem', color: '#374151', lineHeight: '1.5', margin: '0 0 12px' }}>
+                Are you sure you want to permanently delete <strong>"{deleteProductConfirm.title}"</strong> (ID: {deleteProductConfirm.id}) from the MySQL database?
+              </p>
+              <p style={{ fontSize: '0.76rem', color: '#6B7280', margin: 0 }}>
+                This action cannot be undone and will remove the item from all collections and storefront listings.
+              </p>
+            </div>
+            <div className="oripio-modal-footer">
+              <button
+                type="button"
+                className="oripio-btn-secondary"
+                onClick={() => setDeleteProductConfirm(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="menu-action-btn delete"
+                style={{ backgroundColor: '#DC2626', color: '#FFFFFF', border: 'none', padding: '8px 18px', borderRadius: '8px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                onClick={handleDeleteProduct}
+              >
+                <Trash2 size={15} />
+                <span>Delete Permanently</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

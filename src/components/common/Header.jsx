@@ -4,6 +4,7 @@ import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
 import { Search, Heart, ShoppingBag, User, Menu, ChevronDown } from 'lucide-react';
 import { MegaMenu } from './MegaMenu.jsx';
+import { API_ENDPOINTS } from '../../api/api.js';
 import './Header.css';
 
 export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
@@ -66,11 +67,11 @@ export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
 
   // Dynamic navigation items fetched directly from MySQL database API (no hardcoded default menus)
   const [navItems, setNavItems] = useState([]);
-  const [logoUrl, setLogoUrl] = useState('https://www.theirnibs.com/cdn/shop/files/TheirNibs_Logo_Navy_Wide.png');
+  const [logoUrl, setLogoUrl] = useState('');
 
   // Fetch dynamic website menu tree and site settings from MySQL backend API
   useEffect(() => {
-    fetch('http://localhost:5001/api/menu')
+    fetch(API_ENDPOINTS.MENU)
       .then(res => res.json())
       .then(json => {
         if (json.success && Array.isArray(json.data)) {
@@ -92,14 +93,14 @@ export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
         console.warn('Could not load navigation from API:', err.message);
       });
 
-    fetch('http://localhost:5001/api/settings')
+    fetch(API_ENDPOINTS.SETTINGS)
       .then(res => res.json())
       .then(json => {
         if (json.success && json.data && json.data.logo_url) {
           setLogoUrl(json.data.logo_url);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (
@@ -107,7 +108,7 @@ export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
       <div className="container header-container d-flex align-items-center justify-content-between">
         {/* Left: Mobile hamburger & Logo */}
         <div className="d-flex align-items-center gap-2 gap-md-3">
-          <button 
+          <button
             onClick={onOpenMobileNav}
             aria-label="Open menu"
             className="mobile-hamburger-btn d-flex d-xl-none"
@@ -116,8 +117,8 @@ export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
           </button>
 
           <Link to="/" className="d-flex align-items-center text-decoration-none">
-            <img 
-              src={logoUrl} 
+            <img
+              src={logoUrl}
               alt="Store Logo"
               className="header-logo-img"
             />
@@ -136,7 +137,7 @@ export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
                 onMouseLeave={handleMouseLeaveItem}
                 className="desktop-nav-item"
               >
-                <Link 
+                <Link
                   to={item.href}
                   className={`nav-item-link ${isActive ? 'active' : ''}`}
                 >
@@ -149,8 +150,8 @@ export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
                   </span>
 
                   {item.hasMega && (
-                    <ChevronDown 
-                      size={13} 
+                    <ChevronDown
+                      size={13}
                       strokeWidth={2}
                       className={`nav-chevron-icon ${isActive ? 'rotated' : ''}`}
                     />
@@ -163,7 +164,7 @@ export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
 
         {/* Right: Actions */}
         <div className="d-flex align-items-center gap-2 gap-sm-3">
-          <button 
+          <button
             onClick={onOpenSearch}
             aria-label="Search"
             className="header-action-btn"
@@ -171,7 +172,7 @@ export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
             <Search size={20} />
           </button>
 
-          <a 
+          <a
             href="#featured-products"
             aria-label="Wishlist"
             className="header-action-btn"
@@ -184,7 +185,7 @@ export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
             )}
           </a>
 
-          <button 
+          <button
             onClick={onOpenAdmin || (() => alert('Welcome to Their Nibs Portal.'))}
             aria-label="Account / Admin"
             title="Open Admin Portal"
@@ -193,7 +194,7 @@ export function Header({ onOpenSearch, onOpenMobileNav, onOpenAdmin }) {
             <User size={20} />
           </button>
 
-          <button 
+          <button
             onClick={() => setIsCartOpen(true)}
             aria-label="Cart"
             className="header-action-btn"
