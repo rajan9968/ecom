@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { PRODUCTS } from '../../data/products.js';
 import { useProducts } from '../../context/ProductContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
@@ -13,7 +12,7 @@ export function SearchModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const allProds = (dynamicProducts && dynamicProducts.length > 0) ? dynamicProducts : PRODUCTS;
+  const allProds = Array.isArray(dynamicProducts) ? dynamicProducts : [];
 
   const filtered = allProds.filter(p => {
     if (!query.trim()) return false;

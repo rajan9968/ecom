@@ -1,8 +1,8 @@
 import React from 'react';
-import { REVIEWS } from '../../data/reviews.js';
 import { Star, CheckCircle2 } from 'lucide-react';
 
-export function CustomerReviews() {
+export function CustomerReviews({ reviews = [] }) {
+  if (!reviews || reviews.length === 0) return null;
   return (
     <section style={{ padding: 'clamp(60px, 8vw, 100px) 0' }}>
       <div className="container">

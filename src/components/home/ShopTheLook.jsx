@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { PRODUCTS } from '../../data/products.js';
+import { useProducts } from '../../context/ProductContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
 import { ShoppingBag, X } from 'lucide-react';
 
 export function ShopTheLook() {
+  const { products } = useProducts();
   const { addToCart } = useCart();
   const { formatPrice } = useCurrency();
   const [activePin, setActivePin] = useState(null);
@@ -14,15 +15,15 @@ export function ShopTheLook() {
       id: 1,
       x: 38,
       y: 42,
-      product: PRODUCTS[1] // Navy Ticking Stripe Gauze
+      product: (products && products[1]) || products?.[0]
     },
     {
       id: 2,
       x: 68,
       y: 65,
-      product: PRODUCTS[4] // Sophie Ellis-Bextor Cosmetic Bag
+      product: (products && products[4]) || products?.[0]
     }
-  ];
+  ].filter(h => Boolean(h.product));
 
   return (
     <section style={{ padding: 'clamp(60px, 8vw, 100px) 0' }}>

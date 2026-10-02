@@ -10,127 +10,6 @@ import './ProductRow.css';
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
 
-const CATALOG_DATA = {
-  'new-in': [
-    {
-      id: 'seb-robe',
-      title: 'Their Nibs x Sophie Ellis-Bextor Pink Read My Lips Satin Dressing Gown',
-      priceGBP: 60.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_x_Sophie_Ellis-bextor_Dressing_Gown.jpg',
-      tag: 'NEW',
-      isSophie: true
-    },
-    {
-      id: 'seb-shortie',
-      title: 'Their Nibs x Sophie Ellis-Bextor Pink Read My Lips Satin Short Pyjama Set',
-      priceGBP: 58.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversized_short_pyjama_set.jpg',
-      tag: 'NEW',
-      isSophie: true
-    },
-    {
-      id: 'seb-forest-boxy',
-      title: 'Their Nibs x Sophie Ellis-Bextor Murder On The Forest Floor Cotton Boxy Pyjama Set',
-      priceGBP: 60.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_x_Sophie_Ellis-Bextor_Boxy_pyjamas_Set.jpg',
-      tag: 'NEW',
-      isSophie: true
-    },
-    {
-      id: 'seb-long',
-      title: 'Their Nibs x Sophie Ellis-Bextor Pink Read My Lips Satin Oversize Pyjama Set',
-      priceGBP: 62.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg',
-      tag: 'NEW',
-      isSophie: true
-    },
-    {
-      id: 'seb-nightdress',
-      title: 'Their Nibs x Sophie Ellis-Bextor Murder On The Forest Floor Cotton Square Neck Nightdress',
-      priceGBP: 56.0,
-      image: 'https://cdn.shopify.com/s/files/1/1023/3699/files/Thier_Nibs_x_Sophie_Ellis-Bextor_Nightdress.jpg',
-      tag: 'NEW',
-      isSophie: true
-    },
-    {
-      id: 'seb-house-coat',
-      title: 'Their Nibs x Sophie Ellis-Bextor Murder On The Forest Floor Cotton Quilted House Coat',
-      priceGBP: 85.0,
-      image: 'https://cdn.shopify.com/s/files/1/1023/3699/files/Their_Nibs_x_Sophie_Ellis_Bextor_HouseCoat.jpg',
-      tag: 'NEW',
-      isSophie: true
-    }
-  ],
-  'best-sellers': [
-    {
-      id: 'gauze-oversize-set',
-      title: 'Womens Navy Ticking Stripe Gauze Oversize Pyjama Set',
-      priceGBP: 46.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/29.WomensOversizePyjamasNavyTickingStripeShot0036.jpg',
-      tag: 'BESTSELLER',
-      isSophie: false
-    },
-    {
-      id: 'charcoal-mushroom',
-      title: 'Mens Cotton Traditional Pyjamas Charcoal Mushroom',
-      priceGBP: 46.0,
-      image: 'https://cdn.shopify.com/s/files/1/1023/3699/files/mens_grey_mushroom_traditional_pyjamas_detail.jpg',
-      tag: 'BESTSELLER',
-      isSophie: false
-    },
-    {
-      id: 'peacock-blossom',
-      title: 'Traditional Cotton Pyjama Set Blue Blossom Peacock',
-      priceGBP: 44.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/Screenshot_2026-07-14_at_15.14.40.png',
-      tag: 'BESTSELLER',
-      isSophie: false
-    },
-    {
-      id: 'wisteria-sage-robe',
-      title: 'Womens Wisteria Robe Dressing Gown Sage Green',
-      priceGBP: 48.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/Wisteria_Robe_Hero_banner.jpg',
-      tag: 'BESTSELLER',
-      isSophie: false
-    }
-  ],
-  'linen-blend': [
-    {
-      id: 'natural-floral-nightdress',
-      title: 'Womens Cotton Square Neck Frill Nightdress White Neo Classical',
-      priceGBP: 42.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/62_White_Neo_Classical_Square_Neck_With_Frill_Nightdress_011.jpg',
-      tag: 'COTTON',
-      isSophie: false
-    },
-    {
-      id: 'pink-stripe-oversize',
-      title: 'Womens Pink Cotton Stripe Oversize Pyjama Set',
-      priceGBP: 46.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/23_Pink_Cotton_Stripe_Oversize_003_5_UNCROPPED.jpg',
-      tag: 'BESTSELLER',
-      isSophie: false
-    },
-    {
-      id: 'yellow-ticking-set',
-      title: 'Womens Yellow Ticking Stripe Gauze Oversize Pyjama Set',
-      priceGBP: 46.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/28.WomensGauzeOversizePyjamasYellowTickingStripe-BabyBlueTrimShot0106.jpg',
-      tag: 'NEW',
-      isSophie: false
-    },
-    {
-      id: 'green-gingham-dress',
-      title: 'Womens Green Check Cotton Gauze Drop Shoulder Mini Dress',
-      priceGBP: 42.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/7_Womens_Seersucker_Drop_Shoulder_Mini_Night_Dress_Green_watercolour_Gingham_009_5_UNCROPPED.jpg',
-      tag: 'NEW',
-      isSophie: false
-    }
-  ]
-};
-
 export function ProductRow() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('new-in');
@@ -166,7 +45,7 @@ export function ProductRow() {
     { id: 'linen-blend', label: 'Linen Blend Pyjamas & Nightdresses' }
   ];
 
-  // Dynamically filter products from MySQL database
+  // Dynamically filter products strictly from MySQL database API
   const activeProducts = (dynamicProducts && dynamicProducts.length > 0)
     ? dynamicProducts.filter(p => p.status !== 'inactive')
     : [];
@@ -178,30 +57,25 @@ export function ProductRow() {
         p.isNew || 
         p.is_new || 
         (p.tag && p.tag.toUpperCase().includes('NEW')) || 
-        p.isSophie
+        (p.title && p.title.toLowerCase().includes('sophie'))
       );
-      currentProducts = newItems.length >= 2 ? newItems : activeProducts.slice(0, 10);
+      currentProducts = newItems.length > 0 ? newItems : activeProducts.slice(0, 10);
     } else if (activeTab === 'best-sellers') {
       const bestItems = activeProducts.filter(p => 
         p.isBestseller || 
         p.is_bestseller || 
-        (p.tag && p.tag.toUpperCase().includes('BEST'))
+        (p.tag && p.tag.toUpperCase().includes('BEST')) ||
+        (parseFloat(p.rating) >= 4.8)
       );
-      currentProducts = bestItems.length >= 2 ? bestItems : activeProducts.filter(p => (p.rating >= 4.8 || p.stock > 10)).slice(0, 10);
+      currentProducts = bestItems.length > 0 ? bestItems : activeProducts.slice(0, 10);
     } else {
       // Category or linen-blend
       const linenItems = activeProducts.filter(p => 
-        (p.category && p.category.toLowerCase().includes('linen')) || 
-        (p.title && p.title.toLowerCase().includes('linen')) || 
-        (p.title && p.title.toLowerCase().includes('cotton'))
+        (p.category && (p.category.toLowerCase().includes('linen') || p.category.toLowerCase().includes('nightwear') || p.category.toLowerCase().includes('women'))) || 
+        (p.title && (p.title.toLowerCase().includes('linen') || p.title.toLowerCase().includes('cotton') || p.title.toLowerCase().includes('stripe')))
       );
-      currentProducts = linenItems.length >= 2 ? linenItems : activeProducts.slice(0, 10);
+      currentProducts = linenItems.length > 0 ? linenItems : activeProducts.slice(0, 10);
     }
-  }
-
-  // Fallback to CATALOG_DATA if no products match or still loading
-  if (!currentProducts || currentProducts.length === 0) {
-    currentProducts = CATALOG_DATA[activeTab] || CATALOG_DATA['new-in'];
   }
 
   const sliderSettings = {
@@ -210,7 +84,7 @@ export function ProductRow() {
     speed: 500,
     slidesToShow: slidesCount,
     slidesToScroll: 1,
-    autoplay: true,
+    autoplay: currentProducts.length > slidesCount,
     autoplaySpeed: 3800,
     pauseOnHover: true,
     arrows: false,
@@ -264,12 +138,17 @@ export function ProductRow() {
         </div>
 
         {/* Product Cards Slider */}
-        <Slider 
-          ref={sliderRef} 
-          {...sliderSettings} 
-          key={`${activeTab}-${slidesCount}`}
-        >
-          {currentProducts.map((item) => {
+        {currentProducts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#6B7280' }}>
+            <p>No products available in this collection right now.</p>
+          </div>
+        ) : (
+          <Slider 
+            ref={sliderRef} 
+            {...sliderSettings} 
+            key={`${activeTab}-${slidesCount}`}
+          >
+            {currentProducts.map((item) => {
             const wishlisted = isInWishlist(item.id);
             const itemImg = item.image || (item.images && item.images[0]) || 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg';
             const itemPrice = item.priceGBP !== undefined ? item.priceGBP : (typeof item.price === 'number' ? item.price : 45.0);
@@ -375,6 +254,7 @@ export function ProductRow() {
             );
           })}
         </Slider>
+        )}
       </div>
     </section>
   );

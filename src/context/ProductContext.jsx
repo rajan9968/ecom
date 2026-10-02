@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { PRODUCTS as FALLBACK_PRODUCTS } from '../data/products.js';
 import { API_ENDPOINTS } from '../api/api.js';
 
 const ProductContext = createContext();
@@ -7,28 +6,27 @@ const ProductContext = createContext();
 const API_BASE = API_ENDPOINTS.PRODUCTS;
 
 export function ProductProvider({ children }) {
-  const [products, setProducts] = useState(FALLBACK_PRODUCTS);
+  const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch all products from MySQL backend
+  // Fetch all products from MySQL backend API
   const fetchProducts = useCallback(async () => {
     try {
       setIsLoading(true);
       const res = await fetch(`${API_BASE}?status=all`);
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const json = await res.json();
-      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+      if (json.success && Array.isArray(json.data)) {
         setProducts(json.data);
         setError(null);
       } else {
-        // Fallback to local data
-        setProducts(FALLBACK_PRODUCTS);
+        setProducts([]);
       }
     } catch (err) {
-      console.warn('[ProductContext] Backend products fetch failed, using fallback data:', err.message);
+      console.warn('[ProductContext] Backend products fetch error:', err.message);
       setError(err.message);
-      setProducts(FALLBACK_PRODUCTS);
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { gsap } from '../../utils/animations.jsx';
 import './FamilyBanners.css';
 
@@ -46,9 +47,9 @@ export function FamilyBanners() {
                 <p className="family-banner-desc">
                   Comfortable cuts crafted from our softest cottons
                 </p>
-                <a href="#featured-products" className="family-banner-btn">
+                <Link to="/collections/mens" className="family-banner-btn">
                   SHOP MENS
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -69,9 +70,9 @@ export function FamilyBanners() {
                 <p className="family-banner-desc">
                   20% of every children's pyjama pledged directly to charity
                 </p>
-                <a href="#featured-products" className="family-banner-btn">
+                <Link to="/collections/kids" className="family-banner-btn">
                   SHOP KIDS
-                </a>
+                </Link>
               </div>
             </div>
           </div>

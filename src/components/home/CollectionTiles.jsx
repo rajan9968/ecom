@@ -1,4 +1,5 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
+import { useProducts } from '../../context/ProductContext.jsx';
 import { renderSplitWords, animateSplitText, gsap } from '../../utils/animations.jsx';
 import './CollectionTiles.css';
 
@@ -6,29 +7,27 @@ export function CollectionTiles() {
   const headingRef = useRef(null);
   const sectionRef = useRef(null);
   const tilesRef = useRef(null);
+  const { products } = useProducts();
 
-  const collections = [
-    {
-      title: 'TRADITIONAL PYJAMAS',
-      image: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg',
-      link: '#featured-products'
-    },
-    {
-      title: 'NIGHTDRESSES',
-      image: 'https://www.theirnibs.com/cdn/shop/files/62_White_Neo_Classical_Square_Neck_With_Frill_Nightdress_011.jpg',
-      link: '#featured-products'
-    },
-    {
-      title: 'SHORTIE PYJAMAS',
-      image: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversized_short_pyjama_set.jpg',
-      link: '#featured-products'
-    },
-    {
-      title: 'COTTON PYJAMAS',
-      image: 'https://www.theirnibs.com/cdn/shop/files/23_Pink_Cotton_Stripe_Oversize_003_5_UNCROPPED.jpg',
-      link: '#featured-products'
+  // Dynamically derive collections from live products API
+  const collections = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    const catMap = new Map();
+    for (const p of products) {
+      const cat = p.category;
+      if (cat && !catMap.has(cat)) {
+        const img = (Array.isArray(p.images) && p.images[0]) || p.image;
+        if (img) {
+          catMap.set(cat, {
+            title: `${cat.toUpperCase()} NIGHTWEAR`,
+            image: img,
+            link: `/collections/${encodeURIComponent(cat.toLowerCase())}`
+          });
+        }
+      }
     }
-  ];
+    return Array.from(catMap.values()).slice(0, 4);
+  }, [products]);
 
   useEffect(() => {
     animateSplitText(headingRef, sectionRef);
@@ -52,6 +51,8 @@ export function CollectionTiles() {
       );
     }
   }, []);
+
+  if (collections.length === 0) return null;
 
   return (
     <section ref={sectionRef} className="collection-tiles-section">

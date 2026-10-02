@@ -4,48 +4,17 @@ import { gsap } from '../../utils/animations.jsx';
 import { API_ENDPOINTS } from '../../api/api.js';
 import './HeroBanner.css';
 
-const DEFAULT_SLIDES = [
-  {
-    id: 'pyjama-sets',
-    title: "Women's Pyjama Sets",
-    subtitle: "Shop New In Nightwear",
-    ctaText: "SHOP NOW",
-    ctaLink: "#featured-products",
-    badge: "NEW IN",
-    image: "https://www.theirnibs.com/cdn/shop/files/Screenshot_2026-07-14_at_15.14.40.png",
-    alt: "Women's Pyjama Sets"
-  },
-  {
-    id: 'wisteria-robes',
-    title: "Dressing Gowns & Robes",
-    subtitle: "Effortless lightweight cotton & elegant hand-painted floral prints",
-    ctaText: "SHOP ROBES",
-    ctaLink: "#featured-products",
-    badge: "SIGNATURE",
-    image: "https://www.theirnibs.com/cdn/shop/files/Wisteria_Robe_Hero_banner.jpg",
-    alt: "Dressing Gowns & Robes"
-  },
-  {
-    id: 'sophie-collab',
-    title: "Their Nibs x Sophie Ellis-Bextor",
-    subtitle: "Exclusive Disco Glamour & Playful Hand-Drawn Vintage Prints",
-    ctaText: "DISCOVER THE COLLAB",
-    ctaLink: "#featured-products",
-    badge: "LIMITED EDITION",
-    image: "https://www.theirnibs.com/cdn/shop/files/Transitional_new_In.jpg",
-    alt: "Their Nibs x Sophie Ellis-Bextor Collaboration"
-  }
-];
-
 export function HeroBanner() {
   const sliderRef = useRef(null);
   const containerRef = useRef(null);
-  const [slides, setSlides] = useState(DEFAULT_SLIDES);
+  const [slides, setSlides] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch dynamic hero banners from MySQL backend
+  // Fetch dynamic hero banners strictly from MySQL backend API
   useEffect(() => {
     const fetchBanners = async () => {
       try {
+        setIsLoading(true);
         const res = await fetch(`${API_ENDPOINTS.BANNERS}?status=active`);
         const json = await res.json();
         if (json.success && Array.isArray(json.data) && json.data.length > 0) {
@@ -60,9 +29,14 @@ export function HeroBanner() {
             alt: item.title
           }));
           setSlides(mapped);
+        } else {
+          setSlides([]);
         }
       } catch (err) {
-        console.log('Using default hero banners:', err.message);
+        console.warn('Backend banners fetch error:', err.message);
+        setSlides([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -141,6 +115,17 @@ export function HeroBanner() {
       animateSlide();
     }
   };
+
+  if (slides.length === 0) {
+    if (isLoading) {
+      return (
+        <section className="hero-slider-section w-100" style={{ height: '70vh', backgroundColor: '#EADFD9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="spinner-border text-danger" role="status" />
+        </section>
+      );
+    }
+    return null;
+  }
 
   return (
     <section ref={containerRef} className="hero-slider-section w-100">

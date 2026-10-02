@@ -1,24 +1,30 @@
 import React, { useRef, useEffect } from 'react';
 import { useCart } from '../../context/CartContext.jsx';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
+import { useProducts } from '../../context/ProductContext.jsx';
 import { ShoppingBag } from 'lucide-react';
 import { gsap } from '../../utils/animations.jsx';
 
 export function EditorialFeature() {
   const { addToCart } = useCart();
   const { formatPrice } = useCurrency();
+  const { products } = useProducts();
   const sectionRef = useRef(null);
   const leftImgRef = useRef(null);
   const rightCardRef = useRef(null);
 
-  const product = {
-    id: 'green-check-nightshirt',
-    title: 'Womens Green Check Cotton Gauze Nightshirt',
-    priceGBP: 42.00,
-    images: [
-      'https://www.theirnibs.com/cdn/shop/files/7_Womens_Seersucker_Drop_Shoulder_Mini_Night_Dress_Green_watercolour_Gingham_009_5_UNCROPPED.jpg'
-    ]
-  };
+  const rawProduct = (products && products.length > 0)
+    ? (products.find(p => p.title?.toLowerCase().includes('green check') || p.title?.toLowerCase().includes('gingham')) || products[0])
+    : null;
+
+  const product = rawProduct ? {
+    id: rawProduct.id,
+    title: rawProduct.title,
+    priceGBP: Number(rawProduct.priceGBP ?? rawProduct.price_gbp) || 42.0,
+    images: Array.isArray(rawProduct.images) && rawProduct.images.length > 0 
+      ? rawProduct.images 
+      : [rawProduct.image || 'https://www.theirnibs.com/cdn/shop/files/7_Womens_Seersucker_Drop_Shoulder_Mini_Night_Dress_Green_watercolour_Gingham_009_5_UNCROPPED.jpg']
+  } : null;
 
   useEffect(() => {
     if (leftImgRef.current && sectionRef.current) {
@@ -58,6 +64,8 @@ export function EditorialFeature() {
       );
     }
   }, []);
+
+  if (!product) return null;
 
   return (
     <section ref={sectionRef} style={{ padding: '30px 0 60px', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>

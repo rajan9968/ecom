@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { PRODUCTS } from '../../data/products.js';
 import { useProducts } from '../../context/ProductContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
@@ -13,7 +12,7 @@ export function FeaturedCarousel({ onQuickView }) {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { formatPrice } = useCurrency();
 
-  const allProds = (dynamicProducts && dynamicProducts.length > 0) ? dynamicProducts : PRODUCTS;
+  const allProds = Array.isArray(dynamicProducts) ? dynamicProducts : [];
 
   const displayedProducts = activeTab === 'bestsellers' 
     ? allProds.filter(p => p.isBestseller).slice(0, 8)

@@ -1,22 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { PRODUCTS } from '../data/products.js';
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState(() => {
-    // Pre-populate with one item for authentic feel or from localStorage
     try {
       const saved = localStorage.getItem('theirnibs_cart');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
-    return [
-      {
-        product: PRODUCTS[0],
-        size: 'M (UK 12)',
-        quantity: 1
-      }
-    ];
+    return [];
   });
 
   const [isCartOpen, setIsCartOpen] = useState(false);

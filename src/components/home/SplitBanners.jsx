@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './SplitBanners.css';
 
 export function SplitBanners() {
@@ -19,9 +20,9 @@ export function SplitBanners() {
                 <h3 className="split-banner-title">
                   New In
                 </h3>
-                <a href="#featured-products" className="split-banner-btn">
+                <Link to="/collections/womens" className="split-banner-btn">
                   SHOP NEW
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -39,9 +40,9 @@ export function SplitBanners() {
                 <h3 className="split-banner-title">
                   Dressing Gowns & Robes
                 </h3>
-                <a href="#featured-products" className="split-banner-btn">
+                <Link to="/collections/womens" className="split-banner-btn">
                   SHOP NOW
-                </a>
+                </Link>
               </div>
             </div>
           </div>

@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { PRODUCTS } from '../../data/products.js';
 import { useProducts } from '../../context/ProductContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
@@ -52,9 +51,18 @@ export function ProductListing() {
     }
   }, [category]);
 
-  // Filtered & Sorted products
+  // Dynamically extract available categories from live API products
+  const availableCategories = useMemo(() => {
+    const cats = new Set(['All']);
+    (dynamicProducts || []).forEach((p) => {
+      if (p.category) cats.add(p.category);
+    });
+    return Array.from(cats);
+  }, [dynamicProducts]);
+
+  // Filtered & Sorted products (strictly from API)
   const processedProducts = useMemo(() => {
-    const sourceProducts = (dynamicProducts && dynamicProducts.length > 0) ? dynamicProducts : PRODUCTS;
+    const sourceProducts = Array.isArray(dynamicProducts) ? dynamicProducts : [];
     let result = [...sourceProducts];
 
     // Filter by Category
@@ -171,7 +179,7 @@ export function ProductListing() {
 
                 {openDropdown === 'cat' && (
                   <div className="plp-filter-popover">
-                    {['All', 'Womens', 'Mens', 'Kids', 'Sophie Collab'].map((cat) => (
+                    {availableCategories.map((cat) => (
                       <label key={cat} className="plp-popover-item">
                         <input 
                           type="radio" 
@@ -291,7 +299,15 @@ export function ProductListing() {
       {/* 3. Product Cards Grid */}
       <section className="plp-grid-section">
         <div className="container">
-          {paginatedProducts.length === 0 ? (
+          {isProductsLoading ? (
+            <div className="row g-3 g-md-4">
+              {[...Array(8)].map((_, idx) => (
+                <div key={idx} className={gridColumns === 3 ? 'col-6 col-md-4' : 'col-6 col-md-4 col-lg-3'}>
+                  <div style={{ backgroundColor: '#F5EBE6', height: '360px', borderRadius: '8px', opacity: 0.6 }} />
+                </div>
+              ))}
+            </div>
+          ) : paginatedProducts.length === 0 ? (
             <div className="plp-empty-state">
               <h2 className="plp-empty-title">No products match your filters</h2>
               <p>Try resetting your size or category selection to see more pyjama styles.</p>

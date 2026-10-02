@@ -1,8 +1,29 @@
-import React from 'react';
-import { CATEGORIES } from '../../data/categories.js';
+import React, { useMemo } from 'react';
+import { useProducts } from '../../context/ProductContext.jsx';
 import { ArrowUpRight } from 'lucide-react';
 
 export function CategoryGrid() {
+  const { products } = useProducts();
+
+  const categories = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    const map = new Map();
+    for (const p of products) {
+      if (p.category && !map.has(p.category)) {
+        map.set(p.category, {
+          id: p.category.toLowerCase(),
+          title: `${p.category}'s Nightwear`,
+          subtitle: `Hand-drawn prints & signature fabrics`,
+          image: (Array.isArray(p.images) && p.images[0]) || p.image || '',
+          link: `/collections/${p.category.toLowerCase()}`
+        });
+      }
+    }
+    return Array.from(map.values()).slice(0, 4);
+  }, [products]);
+
+  if (categories.length === 0) return null;
+
   return (
     <section style={{ padding: 'clamp(60px, 8vw, 100px) 0' }}>
       <div className="container">
@@ -19,7 +40,7 @@ export function CategoryGrid() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '24px'
         }}>
-          {CATEGORIES.map(cat => (
+          {categories.map(cat => (
             <a
               key={cat.id}
               href={cat.link}

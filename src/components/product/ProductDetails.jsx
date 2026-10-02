@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
 import { useProducts } from '../../context/ProductContext.jsx';
+import { API_ENDPOINTS } from '../../api/api.js';
 import { 
   Heart, 
   Star, 
@@ -22,124 +23,130 @@ import { FoundersStory } from '../home/FoundersStory.jsx';
 import { ValuePropsBar } from '../home/ValuePropsBar.jsx';
 import './ProductDetails.css';
 
-const PRODUCT_DATA = {
-  id: 'seb-long',
-  title: 'Their Nibs x Sophie Ellis-Bextor Pink Read My Lips Satin Oversize Pyjama Set',
-  brand: 'Their Nibs',
-  category: 'Women',
-  priceGBP: 62.0,
-  rating: 4.9,
-  reviewsCount: 124,
-  stockAlert: 'Low in stock - only 4 left in this size',
-  images: [
-    'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg',
-    'https://cdn.shopify.com/s/files/1/1023/3699/files/SEB_Satin_Oversized_Pyjama_Red_My_Lips_013_5_UNCROPPED.jpg?v=1786981589',
-    'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversized_short_pyjama_set.jpg',
-    'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_x_Sophie_Ellis-bextor_Dressing_Gown.jpg'
-  ],
-  sizes: [
-    '8-10 (S)',
-    '10-12 (M)',
-    '12-14 (L)',
-    '14-16 (XL)',
-    '16-18 (2XL)',
-    '18-20 (3XL)'
-  ],
-  companionItems: [
-    {
-      id: 'seb-eye-mask',
-      name: 'Their Nibs x Sophie Ellis-Bextor Pink Satin Eye Mask',
-      priceGBP: 14.0,
-      image: 'https://cdn.shopify.com/s/files/1/1023/3699/files/Their_Nibs_X_Sophie_Ellis-Bextor_Eyemask.jpg?v=1789325836'
-    },
-    {
-      id: 'seb-robe',
-      name: 'Their Nibs x Sophie Ellis-Bextor Pink Satin Dressing Gown',
-      priceGBP: 60.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_x_Sophie_Ellis-bextor_Dressing_Gown.jpg'
-    }
-  ],
-  recommended: [
-    {
-      id: 'seb-robe',
-      title: 'Sophie Ellis-Bextor Pink Satin Dressing Gown',
-      priceGBP: 60.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_x_Sophie_Ellis-bextor_Dressing_Gown.jpg'
-    },
-    {
-      id: 'seb-forest-boxy',
-      title: 'Sophie Ellis-Bextor Murder On The Forest Floor Boxy Pyjama Set',
-      priceGBP: 60.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_x_Sophie_Ellis-Bextor_Boxy_pyjamas_Set.jpg'
-    },
-    {
-      id: 'seb-shortie',
-      title: 'Sophie Ellis-Bextor Read My Lips Satin Short Pyjama Set',
-      priceGBP: 58.0,
-      image: 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversized_short_pyjama_set.jpg'
-    },
-    {
-      id: 'seb-nightdress',
-      title: 'Sophie Ellis-Bextor Square Neck Cotton Nightdress',
-      priceGBP: 56.0,
-      image: 'https://cdn.shopify.com/s/files/1/1023/3699/files/Thier_Nibs_x_Sophie_Ellis-Bextor_Nightdress.jpg'
-    }
-  ]
-};
-
 export function ProductDetails() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { getProductById } = useProducts();
+  const { products, getProductById, isLoading: isProductsLoading } = useProducts();
   const { addToCart, setIsCartOpen } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { formatPrice } = useCurrency();
 
-  const dynamicItem = id ? getProductById(id) : null;
-  const activeProduct = dynamicItem ? {
-    ...PRODUCT_DATA,
-    id: dynamicItem.id,
-    title: dynamicItem.title,
-    brand: 'Their Nibs London',
-    category: dynamicItem.category || 'Women',
-    priceGBP: dynamicItem.priceGBP || 45.0,
-    rating: parseFloat(dynamicItem.rating) || 4.9,
-    reviewsCount: dynamicItem.reviewCount || 42,
-    stockAlert: (dynamicItem.stock !== undefined && dynamicItem.stock <= 5)
-      ? `Low in stock - only ${dynamicItem.stock} left`
-      : `${dynamicItem.stock || 25} in stock - ready for fast dispatch`,
-    images: Array.isArray(dynamicItem.images) && dynamicItem.images.length > 0 
-      ? dynamicItem.images 
-      : [dynamicItem.image || PRODUCT_DATA.images[0]],
-    sizes: Array.isArray(dynamicItem.sizes) && dynamicItem.sizes.length > 0 
-      ? dynamicItem.sizes 
-      : PRODUCT_DATA.sizes,
-    description: dynamicItem.description || '',
-    details: Array.isArray(dynamicItem.details) && dynamicItem.details.length > 0 
-      ? dynamicItem.details 
-      : null
-  } : PRODUCT_DATA;
+  const [productData, setProductData] = useState(null);
+  const [isFetchingItem, setIsFetchingItem] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
-  const [selectedSize, setSelectedSize] = useState(activeProduct.sizes[0] || '10-12 (M)');
+  useEffect(() => {
+    let isMounted = true;
+    if (!id) return;
+
+    // Check if already in products context
+    const local = getProductById(id);
+    if (local) {
+      setProductData(local);
+      setFetchError(false);
+      return;
+    }
+
+    // Otherwise fetch directly from API
+    setIsFetchingItem(true);
+    setFetchError(false);
+    fetch(`${API_ENDPOINTS.PRODUCTS}/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Not found');
+        return res.json();
+      })
+      .then(json => {
+        if (isMounted) {
+          if (json.success && json.data) {
+            setProductData(json.data);
+          } else {
+            setFetchError(true);
+          }
+        }
+      })
+      .catch(() => {
+        if (isMounted) setFetchError(true);
+      })
+      .finally(() => {
+        if (isMounted) setIsFetchingItem(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [id, getProductById]);
+
+  const activeProduct = productData ? {
+    id: productData.id,
+    title: productData.title,
+    brand: 'Their Nibs London',
+    category: productData.category || 'Women',
+    priceGBP: Number(productData.priceGBP ?? productData.price_gbp) || 45.0,
+    rating: parseFloat(productData.rating) || 4.9,
+    reviewsCount: productData.reviewCount || 42,
+    stockAlert: (productData.stock !== undefined && productData.stock <= 5)
+      ? `Low in stock - only ${productData.stock} left`
+      : `${productData.stock || 25} in stock - ready for fast dispatch`,
+    images: Array.isArray(productData.images) && productData.images.length > 0 
+      ? productData.images 
+      : [productData.image || 'https://www.theirnibs.com/cdn/shop/files/Their_Nibs_X_Sophie_Ellis-Bextor_Oversize_Long_Pyjama_Set.jpg'],
+    sizes: Array.isArray(productData.sizes) && productData.sizes.length > 0 
+      ? productData.sizes 
+      : ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+    description: productData.description || 'Our signature hand-illustrated British nightwear cut from ultra-soft, breathable fabrics for blissful sleep and lounging.',
+    details: Array.isArray(productData.details) && productData.details.length > 0 
+      ? productData.details 
+      : [
+          'Signature hand-drawn British print',
+          'Crafted with super-soft, breathable fabric',
+          'Contrast piping detailing and durable seams',
+          'Machine washable at 30°C for lasting softness'
+        ]
+  } : null;
+
+  // Dynamic companion cross-sell items from live products API
+  const companionItems = useMemo(() => {
+    if (!products || !activeProduct) return [];
+    return products
+      .filter(p => p.id !== activeProduct.id && (p.category === 'Accessories' || p.priceGBP < 30))
+      .slice(0, 2)
+      .map(p => ({
+        id: p.id,
+        name: p.title,
+        priceGBP: Number(p.priceGBP ?? p.price_gbp) || 20,
+        image: Array.isArray(p.images) ? p.images[0] : (p.image || '')
+      }));
+  }, [products, activeProduct]);
+
+  // Dynamic recommended items from live products API
+  const recommendedItems = useMemo(() => {
+    if (!products || !activeProduct) return [];
+    const sameCat = products.filter(p => p.id !== activeProduct.id && p.category === activeProduct.category);
+    const pool = sameCat.length >= 4 ? sameCat : products.filter(p => p.id !== activeProduct.id);
+    return pool.slice(0, 4).map(p => ({
+      id: p.id,
+      title: p.title,
+      priceGBP: Number(p.priceGBP ?? p.price_gbp) || 45,
+      image: Array.isArray(p.images) ? p.images[0] : (p.image || '')
+    }));
+  }, [products, activeProduct]);
+
+  const [selectedSize, setSelectedSize] = useState('M (UK 12)');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
-  const [selectedAddons, setSelectedAddons] = useState({
-    'seb-eye-mask': true,
-    'seb-robe': true
-  });
+  const [selectedAddons, setSelectedAddons] = useState({});
 
   useEffect(() => {
-    if (activeProduct.sizes && activeProduct.sizes.length > 0) {
+    if (activeProduct && activeProduct.sizes && activeProduct.sizes.length > 0) {
       setSelectedSize(activeProduct.sizes[0]);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [id]);
+  }, [id, activeProduct?.id]);
 
-  const isFavorited = isInWishlist(activeProduct.id);
+  const isFavorited = activeProduct ? isInWishlist(activeProduct.id) : false;
 
   // Add primary product to bag
   const handleAddToBag = () => {
+    if (!activeProduct) return;
     addToCart({
       id: activeProduct.id,
       title: activeProduct.title,
@@ -152,7 +159,7 @@ export function ProductDetails() {
 
   // Add companion products to bag
   const handleAddSelectedAddons = () => {
-    activeProduct.companionItems.forEach((item) => {
+    companionItems.forEach((item) => {
       if (selectedAddons[item.id]) {
         addToCart({
           id: item.id,
@@ -172,6 +179,48 @@ export function ProductDetails() {
       [itemId]: !prev[itemId]
     }));
   };
+
+  // Loading state
+  if (isFetchingItem || (isProductsLoading && !activeProduct)) {
+    return (
+      <div className="pdp-page-wrapper" style={{ padding: '80px 20px', textAlign: 'center', minHeight: '60vh' }}>
+        <div className="container">
+          <div style={{ maxWidth: '400px', margin: '60px auto', padding: '30px', backgroundColor: '#FAF6F3', borderRadius: '12px' }}>
+            <div className="spinner-border text-danger mb-3" role="status" />
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', color: '#1F1F1F' }}>Loading Product Details...</h3>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not found state
+  if (!activeProduct) {
+    return (
+      <div className="pdp-page-wrapper" style={{ padding: '80px 20px', textAlign: 'center', minHeight: '60vh' }}>
+        <div className="container" style={{ maxWidth: '540px', margin: '40px auto' }}>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: '16px', color: '#1F1F1F' }}>Product Not Found</h2>
+          <p style={{ color: '#6B7280', marginBottom: '24px', lineHeight: 1.6 }}>
+            The requested product could not be loaded from the store catalogue. It may be out of stock or retired.
+          </p>
+          <Link 
+            to="/collections" 
+            style={{ 
+              backgroundColor: '#901010', 
+              color: '#FFFFFF', 
+              padding: '12px 28px', 
+              borderRadius: '999px', 
+              textDecoration: 'none', 
+              fontWeight: 600,
+              display: 'inline-block' 
+            }}
+          >
+            Explore All Collections
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pdp-page-wrapper">
@@ -391,32 +440,34 @@ export function ProductDetails() {
                 </div>
 
                 {/* Often Bought Together (Complete the Look) */}
-                <div className="pdp-cross-sell-card">
-                  <div className="pdp-cross-sell-title">Complete the Look</div>
-                  {activeProduct.companionItems && activeProduct.companionItems.map((addon) => (
-                    <div key={addon.id} className="pdp-cross-sell-item">
-                      <input 
-                        type="checkbox"
-                        className="pdp-cross-checkbox"
-                        checked={Boolean(selectedAddons[addon.id])}
-                        onChange={() => toggleAddon(addon.id)}
-                        aria-label={`Select ${addon.name}`}
-                      />
-                      <img src={addon.image} alt={addon.name} className="pdp-cross-img" />
-                      <div className="pdp-cross-info">
-                        <div className="pdp-cross-name">{addon.name}</div>
-                        <div className="pdp-cross-price">{formatPrice(addon.priceGBP)}</div>
+                {companionItems && companionItems.length > 0 && (
+                  <div className="pdp-cross-sell-card">
+                    <div className="pdp-cross-sell-title">Complete the Look</div>
+                    {companionItems.map((addon) => (
+                      <div key={addon.id} className="pdp-cross-sell-item">
+                        <input 
+                          type="checkbox"
+                          className="pdp-cross-checkbox"
+                          checked={Boolean(selectedAddons[addon.id])}
+                          onChange={() => toggleAddon(addon.id)}
+                          aria-label={`Select ${addon.name}`}
+                        />
+                        <img src={addon.image} alt={addon.name} className="pdp-cross-img" />
+                        <div className="pdp-cross-info">
+                          <div className="pdp-cross-name">{addon.name}</div>
+                          <div className="pdp-cross-price">{formatPrice(addon.priceGBP)}</div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
 
-                  <button 
-                    className="pdp-cross-add-btn"
-                    onClick={handleAddSelectedAddons}
-                  >
-                    Add Selected to Bag
-                  </button>
-                </div>
+                    <button 
+                      className="pdp-cross-add-btn"
+                      onClick={handleAddSelectedAddons}
+                    >
+                      Add Selected to Bag
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -424,34 +475,38 @@ export function ProductDetails() {
       </section>
 
       {/* 3. Recommended For You Carousel/Grid */}
-      <section className="pdp-recommended-section">
-        <div className="container">
-          <div className="pdp-section-header">
-            <h2 className="pdp-section-title">Recommended For You</h2>
-          </div>
+      {recommendedItems && recommendedItems.length > 0 && (
+        <section className="pdp-recommended-section">
+          <div className="container">
+            <div className="pdp-section-header">
+              <h2 className="pdp-section-title">Recommended For You</h2>
+            </div>
 
-          <div className="row g-3 g-md-4">
-            {activeProduct.recommended && activeProduct.recommended.map((item) => (
-              <div key={item.id} className="col-6 col-md-3">
-                <div 
-                  className="pdp-rec-card"
-                  onClick={() => {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                >
-                  <div className="pdp-rec-img-wrap">
-                    <img src={item.image} alt={item.title} className="pdp-rec-img" loading="lazy" />
-                  </div>
-                  <div className="pdp-rec-body">
-                    <h3 className="pdp-rec-title">{item.title}</h3>
-                    <div className="pdp-rec-price">{formatPrice(item.priceGBP)}</div>
+            <div className="row g-3 g-md-4">
+              {recommendedItems.map((item) => (
+                <div key={item.id} className="col-6 col-md-3">
+                  <div 
+                    className="pdp-rec-card"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      navigate(`/product/${item.id}`);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    <div className="pdp-rec-img-wrap">
+                      <img src={item.image} alt={item.title} className="pdp-rec-img" loading="lazy" />
+                    </div>
+                    <div className="pdp-rec-body">
+                      <h3 className="pdp-rec-title">{item.title}</h3>
+                      <div className="pdp-rec-price">{formatPrice(item.priceGBP)}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 4. Editorial Sophie Ellis-Bextor Quote Banner */}
       <section className="pdp-quote-banner">
