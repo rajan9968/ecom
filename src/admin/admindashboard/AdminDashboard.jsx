@@ -1,15 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  ECOM_OVERVIEW_CARDS,
-  TOP_SELLING_PRODUCTS,
-  REVENUE_CHART_DATA,
-  INITIAL_ORDERS,
-  DATE_FILTER_OPTIONS,
-  CATEGORY_BREAKDOWN,
-  INITIAL_CUSTOMERS,
-  INITIAL_DISCOUNTS
-} from './adminData.js';
+
 import {
   Search,
   Bell,
@@ -75,13 +66,9 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
   // Determine current active nav from prop or current pathname
   const getCurrentTab = () => {
     const path = location.pathname.toLowerCase();
-    if (path.includes('/admin/orders')) return 'orders';
     if (path.includes('/admin/products') || path.includes('/admin/catalog')) return 'catalog';
     if (path.includes('/admin/menus') || path.includes('/admin/navigation')) return 'menu';
     if (path.includes('/admin/banners')) return 'banners';
-    if (path.includes('/admin/customers')) return 'customers';
-    if (path.includes('/admin/analytics')) return 'analytics';
-    if (path.includes('/admin/discounts')) return 'discounts';
     if (path.includes('/admin/settings')) return 'settings';
     return activeTab || 'dashboard';
   };
@@ -101,16 +88,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
     navigate(routePath);
   };
 
-  // Date range dropdown
-  const [selectedDateRange, setSelectedDateRange] = useState(DATE_FILTER_OPTIONS[0]);
-  const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
-
-  // Sales Revenue Chart toggle: monthly or weekly
-  const [chartMode, setChartMode] = useState('monthly');
-  const [activeBarIndex, setActiveBarIndex] = useState(6); // July (peak month) highlighted by default
-
   // Live Dynamic Products state (managed via MySQL /api/products)
-  const [products, setProducts] = useState(TOP_SELLING_PRODUCTS);
   const [productsList, setProductsList] = useState([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [productSearch, setProductSearch] = useState('');
@@ -143,17 +121,6 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
     status: 'active'
   });
 
-  // Customer Orders state & filters
-  const [orders, setOrders] = useState(INITIAL_ORDERS);
-  const [orderSearch, setOrderSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const [selectedOrderIds, setSelectedOrderIds] = useState(new Set());
-
-  // Customers & Discounts state
-  const [customersList, setCustomersList] = useState(INITIAL_CUSTOMERS);
-  const [discountsList, setDiscountsList] = useState(INITIAL_DISCOUNTS);
-
   // Dynamic Navigation Menus & Submenus State
   const [menuTree, setMenuTree] = useState([]);
   const [menuParents, setMenuParents] = useState([]);
@@ -171,8 +138,6 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
   });
 
   // Interactive Modals & Toast
-  const [selectedOrderModal, setSelectedOrderModal] = useState(null);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -362,7 +327,6 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         setProductsList(json.data);
-        setProducts(json.data.slice(0, 8));
       }
     } catch (err) {
       console.warn('Backend products fetch error:', err.message);
@@ -956,74 +920,14 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
 
 
 
-  // Handle Order Status Update
-  const handleUpdateOrderStatus = (orderId, newFulfillment) => {
-    setOrders((prev) =>
-      prev.map((ord) =>
-        ord.id === orderId ? { ...ord, fulfillmentStatus: newFulfillment } : ord
-      )
-    );
-    if (selectedOrderModal && selectedOrderModal.id === orderId) {
-      setSelectedOrderModal((prev) => ({ ...prev, fulfillmentStatus: newFulfillment }));
-    }
-    showToast(`Order ${orderId} marked as ${newFulfillment}!`);
-  };
-
-  // Handle Reset Data
+  // Reload live data from database
   const handleResetData = () => {
-    setProducts(TOP_SELLING_PRODUCTS);
-    setOrders(INITIAL_ORDERS);
-    setSelectedOrderIds(new Set());
-    setChartMode('monthly');
-    setActiveBarIndex(6);
-    setSelectedDateRange(DATE_FILTER_OPTIONS[0]);
-    setOrderSearch('');
-    setStatusFilter('All');
+    fetchProductsList();
     fetchMenuData();
-    showToast('Dashboard numbers refreshed');
+    fetchBanners();
+    fetchSiteSettings();
+    showToast('Live store data reloaded from database');
   };
-
-  // Filter orders
-  const filteredOrders = orders.filter((ord) => {
-    const matchesFilter =
-      statusFilter === 'All'
-        ? true
-        : ord.paymentStatus === statusFilter || ord.fulfillmentStatus === statusFilter;
-
-    const searchLower = orderSearch.toLowerCase();
-    const matchesSearch =
-      ord.id.toLowerCase().includes(searchLower) ||
-      ord.customer.toLowerCase().includes(searchLower) ||
-      ord.email.toLowerCase().includes(searchLower) ||
-      ord.itemSummary.toLowerCase().includes(searchLower) ||
-      ord.location.toLowerCase().includes(searchLower);
-
-    return matchesFilter && matchesSearch;
-  });
-
-  // Table row checkboxes
-  const handleSelectAllRows = (e) => {
-    if (e.target.checked) {
-      setSelectedOrderIds(new Set(filteredOrders.map((o) => o.id)));
-    } else {
-      setSelectedOrderIds(new Set());
-    }
-  };
-
-  const handleToggleRow = (id) => {
-    const next = new Set(selectedOrderIds);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      next.add(id);
-    }
-    setSelectedOrderIds(next);
-  };
-
-  const isAllSelected = filteredOrders.length > 0 && selectedOrderIds.size === filteredOrders.length;
-
-  // Active chart dataset
-  const currentBars = REVENUE_CHART_DATA[chartMode];
 
   // Calculate totals
   const totalTopMenus = menuTree.length;
@@ -1037,15 +941,11 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
   // Friendly title for breadcrumb
   const getTabTitle = () => {
     switch (activeNav) {
-      case 'orders': return 'Customer Orders';
       case 'catalog': return 'Products & Catalog';
       case 'menu': return 'Website Navigation Menus';
-      case 'customers': return 'Customers';
-      case 'analytics': return 'Sales Analytics';
-      case 'discounts': return 'Discounts & Promo Codes';
-      case 'settings': return 'Store Settings';
       case 'banners': return 'Hero Banners & Sliders';
-      default: return 'Sales Overview';
+      case 'settings': return 'Store Settings';
+      default: return 'Store Overview';
     }
   };
 
@@ -1079,11 +979,16 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
               <Search size={15} color="#9CA3AF" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search catalog..."
                 className="sidebar-search-input"
-                value={orderSearch}
-                onChange={(e) => setOrderSearch(e.target.value)}
-                aria-label="Global Admin Search"
+                value={productSearch}
+                onChange={(e) => {
+                  setProductSearch(e.target.value);
+                  if (activeNav !== 'catalog') {
+                    handleNavClick('catalog', '/admin/products');
+                  }
+                }}
+                aria-label="Search Catalog"
               />
             </div>
             <kbd className="sidebar-search-kbd">⌘ K</kbd>
@@ -1106,20 +1011,6 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                 </button>
               </li>
 
-              {/* Route: /admin/orders */}
-              <li className="sidebar-nav-item">
-                <button
-                  onClick={() => handleNavClick('orders', '/admin/orders')}
-                  className={`sidebar-nav-link ${activeNav === 'orders' ? 'active' : ''}`}
-                >
-                  <div className="sidebar-link-content">
-                    <Package size={18} />
-                    <span>Orders</span>
-                  </div>
-                  <span className="sidebar-nav-count">1.4k</span>
-                </button>
-              </li>
-
               {/* Route: /admin/products */}
               <li className="sidebar-nav-item">
                 <button
@@ -1130,32 +1021,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                     <Tag size={18} />
                     <span>Products & Catalog</span>
                   </div>
-                </button>
-              </li>
-
-              {/* Route: /admin/customers */}
-              <li className="sidebar-nav-item">
-                <button
-                  onClick={() => handleNavClick('customers', '/admin/customers')}
-                  className={`sidebar-nav-link ${activeNav === 'customers' ? 'active' : ''}`}
-                >
-                  <div className="sidebar-link-content">
-                    <Users size={18} />
-                    <span>Customers</span>
-                  </div>
-                </button>
-              </li>
-
-              {/* Route: /admin/analytics */}
-              <li className="sidebar-nav-item">
-                <button
-                  onClick={() => handleNavClick('analytics', '/admin/analytics')}
-                  className={`sidebar-nav-link ${activeNav === 'analytics' ? 'active' : ''}`}
-                >
-                  <div className="sidebar-link-content">
-                    <BarChart2 size={18} />
-                    <span>Sales Analytics</span>
-                  </div>
+                  <span className="sidebar-nav-count highlight">{productsList.length}</span>
                 </button>
               </li>
             </ul>
@@ -1190,20 +1056,6 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                     <span>Hero Banners</span>
                   </div>
                   <span className="sidebar-nav-count highlight">{banners.length}</span>
-                </button>
-              </li>
-
-              {/* Route: /admin/discounts */}
-              <li className="sidebar-nav-item">
-                <button
-                  onClick={() => handleNavClick('discounts', '/admin/discounts')}
-                  className={`sidebar-nav-link ${activeNav === 'discounts' ? 'active' : ''}`}
-                >
-                  <div className="sidebar-link-content">
-                    <Percent size={18} />
-                    <span>Discounts & Promos</span>
-                  </div>
-                  <span className="sidebar-nav-count">3</span>
                 </button>
               </li>
 
@@ -1267,7 +1119,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
             <div className="upgrade-card-title">
               <span className="status-live-indicator" /> Online Store Live
             </div>
-            <p className="upgrade-card-desc">28 customers are currently browsing pyjama collections</p>
+            <p className="upgrade-card-desc">Connected to live API & MySQL database</p>
             <div className="upgrade-btn-row">
               <button
                 onClick={onExit || (() => navigate('/'))}
@@ -1388,10 +1240,10 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                     </button>
                     <button
                       className="oripio-dropdown-item"
-                      onClick={() => { setIsProfileMenuOpen(false); handleNavClick('orders', '/admin/orders'); }}
+                      onClick={() => { setIsProfileMenuOpen(false); handleNavClick('banners', '/admin/banners'); }}
                     >
-                      <Package size={14} />
-                      <span>Manage Orders</span>
+                      <ImageIcon size={14} />
+                      <span>Hero Banners</span>
                     </button>
                     <button
                       className="oripio-dropdown-item"
@@ -1453,128 +1305,203 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                 <div className="overview-header-row">
                   <div>
                     <h2 className="overview-title">E-Commerce Overview</h2>
-                    <p className="overview-subtitle">Real-time sales, order volume, and fulfillment metrics</p>
+                    <p className="overview-subtitle">Real-time status of your live catalog, menus, banners, and store configuration</p>
                   </div>
 
                   <div className="overview-actions-row">
+                    <button
+                      className="dropdown-pill-btn"
+                      onClick={() => handleNavClick('catalog', '/admin/products')}
+                      title="Manage Product Catalog"
+                    >
+                      <Tag size={14} color="#901010" />
+                      <span>Products ({productsList.length})</span>
+                    </button>
+
                     <button
                       className="dropdown-pill-btn"
                       onClick={() => handleNavClick('menu', '/admin/menus')}
                       title="Manage Website Menus"
                     >
                       <Compass size={14} color="#901010" />
-                      <span>Website Menus</span>
+                      <span>Menus ({totalTopMenus})</span>
                     </button>
 
-                    <div className="oripio-dropdown-wrapper">
-                      <button
-                        className="dropdown-pill-btn"
-                        onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
-                        aria-label="Select Date Range"
-                      >
-                        <span>{selectedDateRange}</span>
-                        <ChevronDown size={14} color="#6B7280" />
-                      </button>
-
-                      {isDateDropdownOpen && (
-                        <div className="oripio-dropdown-menu">
-                          {DATE_FILTER_OPTIONS.map((opt) => (
-                            <button
-                              key={opt}
-                              className={`oripio-dropdown-item ${selectedDateRange === opt ? 'active' : ''}`}
-                              onClick={() => {
-                                setSelectedDateRange(opt);
-                                setIsDateDropdownOpen(false);
-                                showToast(`Filtered report for: ${opt}`);
-                              }}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      className="dropdown-pill-btn"
+                      onClick={() => handleNavClick('banners', '/admin/banners')}
+                      title="Manage Hero Banners"
+                    >
+                      <ImageIcon size={14} color="#901010" />
+                      <span>Banners ({banners.length})</span>
+                    </button>
 
                     <button
                       className="reset-data-btn"
                       onClick={handleResetData}
-                      title="Refresh store metrics"
+                      title="Reload data from database"
                     >
                       <RotateCcw size={14} />
-                      <span>Refresh</span>
+                      <span>Reload</span>
                     </button>
                   </div>
                 </div>
 
-                {/* 3 Metric Cards */}
+                {/* 4 Live Metric Cards */}
                 <div className="row g-3 g-xl-4 mb-4">
-                  {ECOM_OVERVIEW_CARDS.map((card) => (
-                    <div key={card.id} className="col-12 col-md-6 col-lg-4">
-                      <div className={`summary-card ${card.theme}`}>
-                        <div className="summary-card-top">
-                          <div className="summary-icon-title-group">
-                            <div className={`summary-icon-box ${card.id === 'orders' ? 'purple' : card.id === 'aov' ? 'blue' : ''}`}>
-                              {card.id === 'revenue' && <ShoppingBag size={20} />}
-                              {card.id === 'orders' && <Package size={20} />}
-                              {card.id === 'aov' && <TrendingUp size={20} />}
-                            </div>
-                            <div>
-                              <h3 className="summary-title-text">{card.title}</h3>
-                              <p className="summary-subtitle-text">{card.subtitle}</p>
-                            </div>
+                  {/* Card 1: Total Products */}
+                  <div className="col-12 col-sm-6 col-lg-3">
+                    <div className="summary-card gold">
+                      <div className="summary-card-top">
+                        <div className="summary-icon-title-group">
+                          <div className="summary-icon-box">
+                            <Tag size={20} />
                           </div>
-
-                          <button
-                            className="summary-more-btn"
-                            onClick={() => handleNavClick(card.id === 'orders' ? 'orders' : 'analytics', card.id === 'orders' ? '/admin/orders' : '/admin/analytics')}
-                            aria-label={`Options for ${card.title}`}
-                          >
-                            <MoreHorizontal size={18} />
-                          </button>
-                        </div>
-
-                        <div className="summary-amount-row">
-                          <span className="summary-amount-val">{card.amount}</span>
-                          <span className="summary-pill-change">{card.change}</span>
-                        </div>
-
-                        <div
-                          className="summary-card-bottom"
-                          onClick={() => handleNavClick(card.id === 'orders' ? 'orders' : 'analytics', card.id === 'orders' ? '/admin/orders' : '/admin/analytics')}
-                          role="button"
-                          tabIndex={0}
-                        >
-                          <span>{card.actionText}</span>
-                          <ArrowRight size={15} />
+                          <div>
+                            <h3 className="summary-title-text">Catalog Products</h3>
+                            <p className="summary-subtitle-text">Total in database</p>
+                          </div>
                         </div>
                       </div>
+                      <div className="summary-amount-row">
+                        <span className="summary-amount-val">{productsList.length}</span>
+                        <span className="summary-pill-change">
+                          {productsList.filter(p => p.status === 'active').length} Active
+                        </span>
+                      </div>
+                      <div
+                        className="summary-card-bottom"
+                        onClick={() => handleNavClick('catalog', '/admin/products')}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <span>Manage Products</span>
+                        <ArrowRight size={15} />
+                      </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Card 2: Website Menus */}
+                  <div className="col-12 col-sm-6 col-lg-3">
+                    <div className="summary-card purple">
+                      <div className="summary-card-top">
+                        <div className="summary-icon-title-group">
+                          <div className="summary-icon-box purple">
+                            <Compass size={20} />
+                          </div>
+                          <div>
+                            <h3 className="summary-title-text">Website Menus</h3>
+                            <p className="summary-subtitle-text">Header navigation</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="summary-amount-row">
+                        <span className="summary-amount-val">{totalTopMenus}</span>
+                        <span className="summary-pill-change">
+                          {totalSubmenus} Sub-items
+                        </span>
+                      </div>
+                      <div
+                        className="summary-card-bottom"
+                        onClick={() => handleNavClick('menu', '/admin/menus')}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <span>Configure Menus</span>
+                        <ArrowRight size={15} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Hero Banners */}
+                  <div className="col-12 col-sm-6 col-lg-3">
+                    <div className="summary-card blue">
+                      <div className="summary-card-top">
+                        <div className="summary-icon-title-group">
+                          <div className="summary-icon-box blue">
+                            <ImageIcon size={20} />
+                          </div>
+                          <div>
+                            <h3 className="summary-title-text">Hero Banners</h3>
+                            <p className="summary-subtitle-text">Homepage slider</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="summary-amount-row">
+                        <span className="summary-amount-val">{banners.length}</span>
+                        <span className="summary-pill-change">
+                          {banners.filter(b => b.status === 'active').length} Active
+                        </span>
+                      </div>
+                      <div
+                        className="summary-card-bottom"
+                        onClick={() => handleNavClick('banners', '/admin/banners')}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <span>Manage Banners</span>
+                        <ArrowRight size={15} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Store Info & Status */}
+                  <div className="col-12 col-sm-6 col-lg-3">
+                    <div className="summary-card green">
+                      <div className="summary-card-top">
+                        <div className="summary-icon-title-group">
+                          <div className="summary-icon-box green">
+                            <Settings size={20} />
+                          </div>
+                          <div>
+                            <h3 className="summary-title-text">Store Settings</h3>
+                            <p className="summary-subtitle-text">Live boutique config</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="summary-amount-row">
+                        <span className="summary-amount-val" style={{ fontSize: '1.25rem' }}>
+                          {siteSettings.site_name ? 'Connected' : 'Active'}
+                        </span>
+                        <span className="summary-pill-change">Online</span>
+                      </div>
+                      <div
+                        className="summary-card-bottom"
+                        onClick={() => handleNavClick('settings', '/admin/settings')}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <span>Edit Settings</span>
+                        <ArrowRight size={15} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Top Products & Sales Chart */}
+                {/* Live Products Highlights & Quick Management Panel */}
                 <div className="row g-3 g-xl-4 mb-4">
-                  <div className="col-12 col-lg-5">
+                  {/* Left: Recent Products from Database */}
+                  <div className="col-12 col-lg-7">
                     <div className="oripio-panel-card">
                       <div className="panel-header-row">
                         <div>
-                          <h3 className="panel-title">Top Selling Products</h3>
-                          <p className="panel-subtitle">Best performing pyjamas by revenue</p>
+                          <h3 className="panel-title">Catalog Highlights</h3>
+                          <p className="panel-subtitle">Live products currently stored in your MySQL database</p>
                         </div>
                         <button
                           className="add-wallet-btn"
                           onClick={() => handleNavClick('catalog', '/admin/products')}
                         >
-                          <span>View All</span>
+                          <span>View All ({productsList.length})</span>
                           <ArrowRight size={13} />
                         </button>
                       </div>
 
                       <div className="top-products-list">
-                        {products.slice(0, 4).map((prod) => (
+                        {productsList.slice(0, 5).map((prod) => (
                           <div key={prod.id} className="top-product-item">
                             <img
-                              src={prod.image}
+                              src={prod.image_url || prod.image}
                               alt={prod.title}
                               className="top-product-thumbnail"
                               onError={(e) => {
@@ -1583,16 +1510,25 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                             />
                             <div className="top-product-details">
                               <h4 className="top-product-title" title={prod.title}>{prod.title}</h4>
-                              <span className="top-product-category">{prod.category} • {prod.price}</span>
+                              <span className="top-product-category">
+                                {prod.category || 'Nightwear'} • £{parseFloat(prod.price || 0).toFixed(2)}
+                              </span>
                             </div>
                             <div className="top-product-meta">
-                              <span className="top-product-revenue">{prod.revenue}</span>
-                              <span className={`product-stock-tag ${prod.stockStatus === 'Low Stock' ? 'low' : 'ok'}`}>
-                                {prod.stockStatus === 'Low Stock' ? `Only ${prod.stockCount} left` : `${prod.unitsSold} sold`}
+                              <span className="top-product-revenue">
+                                Stock: {prod.stock || 0}
+                              </span>
+                              <span className={`product-stock-tag ${prod.status === 'active' ? 'ok' : 'low'}`}>
+                                {prod.status === 'active' ? 'Active' : 'Draft'}
                               </span>
                             </div>
                           </div>
                         ))}
+                        {productsList.length === 0 && (
+                          <div style={{ textAlign: 'center', padding: '30px', color: '#9CA3AF' }}>
+                            {isLoadingProducts ? 'Loading products from database...' : 'No products found in database.'}
+                          </div>
+                        )}
                       </div>
 
                       <div className="panel-bottom-action">
@@ -1600,267 +1536,124 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
                           className="text-link-btn"
                           onClick={() => handleNavClick('catalog', '/admin/products')}
                         >
-                          <span>Go to Product Catalog Route (/admin/products)</span>
+                          <span>Go to Product Catalog (/admin/products)</span>
                           <ArrowRight size={14} />
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  <div className="col-12 col-lg-7">
+                  {/* Right: Store Management & Quick Shortcuts */}
+                  <div className="col-12 col-lg-5">
                     <div className="oripio-panel-card">
                       <div className="panel-header-row">
                         <div>
-                          <h3 className="panel-title">Store Sales & Revenue</h3>
-                          <p className="panel-subtitle">Gross merchandise volume across channels</p>
-                        </div>
-
-                        <div className="cashflow-toggle-group">
-                          <button
-                            className={`cf-toggle-btn ${chartMode === 'monthly' ? 'active' : ''}`}
-                            onClick={() => { setChartMode('monthly'); setActiveBarIndex(6); }}
-                          >
-                            Monthly
-                          </button>
-                          <button
-                            className={`cf-toggle-btn ${chartMode === 'weekly' ? 'active' : ''}`}
-                            onClick={() => { setChartMode('weekly'); setActiveBarIndex(3); }}
-                          >
-                            Weekly
-                          </button>
+                          <h3 className="panel-title">Store Management</h3>
+                          <p className="panel-subtitle">Direct shortcuts to live API modules</p>
                         </div>
                       </div>
 
-                      <div className="cashflow-val-row">
-                        <div>
-                          <div className="cashflow-big-val">
-                            {chartMode === 'monthly' ? '£48,620.50' : '£11,870.50'}
-                          </div>
-                          <div className="ecom-orders-count-label">
-                            <CheckCircle2 size={13} color="#16A34A" />
-                            <span>{chartMode === 'monthly' ? '1,428 orders fulfilled' : '384 orders fulfilled'}</span>
-                          </div>
-                        </div>
-                        <button
-                          className="category-breakdown-btn"
-                          onClick={() => handleNavClick('analytics', '/admin/analytics')}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                        <div
+                          style={{
+                            padding: '14px',
+                            background: '#F9FAFB',
+                            borderRadius: '10px',
+                            border: '1px solid #E5E7EB',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => openCreateProductModal()}
                         >
-                          <BarChart2 size={14} />
-                          <span>Detailed Analytics</span>
-                        </button>
-                      </div>
-
-                      <div className="cf-chart-canvas">
-                        <div className="cf-y-labels">
-                          <span>£50k</span>
-                          <span>£40k</span>
-                          <span>£30k</span>
-                          <span>£20k</span>
-                          <span>£10k</span>
-                          <span>£0</span>
-                        </div>
-
-                        <div className="cf-bars-track">
-                          {currentBars.map((item, idx) => {
-                            const isHighlighted = idx === activeBarIndex;
-                            const barHeightPercentage = `${(item.value / 55) * 100}%`;
-
-                            return (
-                              <div
-                                key={item.label}
-                                className="cf-bar-col"
-                                onClick={() => setActiveBarIndex(idx)}
-                              >
-                                {isHighlighted && (
-                                  <div className="cf-tooltip-black">
-                                    <div className="cf-tooltip-date">{item.date || 'Current Period'}</div>
-                                    <div className="cf-tooltip-row">
-                                      <span>Sales</span>
-                                      <strong>{item.amount}</strong>
-                                    </div>
-                                    <div className="cf-tooltip-row">
-                                      <span>Volume</span>
-                                      <span className="cf-tooltip-inflow">{item.inflow}</span>
-                                    </div>
-                                  </div>
-                                )}
-
-                                <div
-                                  className={`cf-bar-shape ${isHighlighted ? 'highlight' : ''}`}
-                                  style={{ height: barHeightPercentage }}
-                                >
-                                  {isHighlighted && <div className="cf-highlight-dot" />}
-                                </div>
-
-                                <span className="cf-bar-name">{item.label}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ----------------------------------------------------------
-               TAB 2: /admin/orders (ORDERS MANAGEMENT)
-               ---------------------------------------------------------- */}
-            {(activeNav === 'orders' || activeNav === 'dashboard') && (
-              <div className="row mb-4" id="recent-orders-section">
-                <div className="col-12">
-                  <div className="activities-table-card">
-                    <div className="activities-header-row">
-                      <div>
-                        <h3 className="panel-title">
-                          {activeNav === 'orders' ? 'Customer Orders Management' : 'Recent Customer Orders'}
-                        </h3>
-                        <p className="panel-subtitle">Live orders received from UK and international shoppers</p>
-                      </div>
-
-                      <div className="activities-table-tools">
-                        <div className="activities-search-box">
-                          <Search size={14} color="#9CA3AF" />
-                          <input
-                            type="text"
-                            placeholder="Search customer, order #..."
-                            className="activities-search-input"
-                            value={orderSearch}
-                            onChange={(e) => setOrderSearch(e.target.value)}
-                          />
-                        </div>
-
-                        <div className="oripio-dropdown-wrapper">
-                          <button
-                            className="filter-pill-btn"
-                            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                          >
-                            <Filter size={13} />
-                            <span>Status: {statusFilter}</span>
-                          </button>
-
-                          {isFilterDropdownOpen && (
-                            <div className="oripio-dropdown-menu">
-                              {['All', 'Paid', 'Pending', 'Shipped', 'Processing', 'Delivered'].map((st) => (
-                                <button
-                                  key={st}
-                                  className={`oripio-dropdown-item ${statusFilter === st ? 'active' : ''}`}
-                                  onClick={() => {
-                                    setStatusFilter(st);
-                                    setIsFilterDropdownOpen(false);
-                                  }}
-                                >
-                                  {st}
-                                </button>
-                              ))}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#FDF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#901010' }}>
+                              <Plus size={18} />
                             </div>
-                          )}
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#111827' }}>Add New Product</div>
+                              <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>Create product with image upload, sizes & stock</div>
+                            </div>
+                          </div>
+                          <ArrowRight size={16} color="#9CA3AF" />
+                        </div>
+
+                        <div
+                          style={{
+                            padding: '14px',
+                            background: '#F9FAFB',
+                            borderRadius: '10px',
+                            border: '1px solid #E5E7EB',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => openCreateMenuModal('')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1E40AF' }}>
+                              <Compass size={18} />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#111827' }}>Add Navigation Menu</div>
+                              <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>Add header link or dropdown category</div>
+                            </div>
+                          </div>
+                          <ArrowRight size={16} color="#9CA3AF" />
+                        </div>
+
+                        <div
+                          style={{
+                            padding: '14px',
+                            background: '#F9FAFB',
+                            borderRadius: '10px',
+                            border: '1px solid #E5E7EB',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => openCreateBannerModal()}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6D28D9' }}>
+                              <ImageIcon size={18} />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#111827' }}>Upload Hero Banner</div>
+                              <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>Upload slides, cta links & badges</div>
+                            </div>
+                          </div>
+                          <ArrowRight size={16} color="#9CA3AF" />
+                        </div>
+
+                        <div
+                          style={{
+                            padding: '14px',
+                            background: '#F9FAFB',
+                            borderRadius: '10px',
+                            border: '1px solid #E5E7EB',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleNavClick('settings', '/admin/settings')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#047857' }}>
+                              <Settings size={18} />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#111827' }}>Store Configuration</div>
+                              <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>Edit logo, address, email, phone & socials</div>
+                            </div>
+                          </div>
+                          <ArrowRight size={16} color="#9CA3AF" />
                         </div>
                       </div>
-                    </div>
-
-                    <div className="table-responsive-box">
-                      <table className="oripio-table">
-                        <thead>
-                          <tr>
-                            <th style={{ width: '40px' }}>
-                              <input
-                                type="checkbox"
-                                checked={isAllSelected}
-                                onChange={handleSelectAllRows}
-                                aria-label="Select all orders"
-                              />
-                            </th>
-                            <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Purchased Items</th>
-                            <th>Date & Time</th>
-                            <th>Total</th>
-                            <th>Payment</th>
-                            <th>Fulfillment</th>
-                            <th style={{ width: '60px', textAlign: 'center' }}>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredOrders.length === 0 ? (
-                            <tr>
-                              <td colSpan={9} style={{ textAlign: 'center', padding: '36px', color: '#9CA3AF' }}>
-                                No orders found matching your search or status filter.
-                              </td>
-                            </tr>
-                          ) : (
-                            filteredOrders.map((ord) => {
-                              const isChecked = selectedOrderIds.has(ord.id);
-                              return (
-                                <tr key={ord.id} className={isChecked ? 'row-selected' : ''}>
-                                  <td>
-                                    <input
-                                      type="checkbox"
-                                      checked={isChecked}
-                                      onChange={() => handleToggleRow(ord.id)}
-                                      aria-label={`Select order ${ord.id}`}
-                                    />
-                                  </td>
-                                  <td>
-                                    <button
-                                      className="order-id-link"
-                                      onClick={() => setSelectedOrderModal(ord)}
-                                    >
-                                      #{ord.id}
-                                    </button>
-                                  </td>
-                                  <td>
-                                    <div className="order-customer-cell">
-                                      <div
-                                        className="customer-avatar-initials"
-                                        style={{ backgroundColor: ord.avatarBg }}
-                                      >
-                                        {ord.customer.charAt(0)}
-                                      </div>
-                                      <div>
-                                        <div className="customer-name">{ord.customer}</div>
-                                        <div className="customer-meta">{ord.location}</div>
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className="order-items-summary" title={ord.itemSummary}>
-                                      {ord.itemSummary}
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className="order-date-text">{ord.date}</div>
-                                    <div className="order-time-text">{ord.time}</div>
-                                  </td>
-                                  <td>
-                                    <span className="order-amount-text">{ord.amount}</span>
-                                  </td>
-                                  <td>
-                                    <span className={`payment-pill ${ord.paymentStatus.toLowerCase()}`}>
-                                      {ord.paymentStatus}
-                                    </span>
-                                  </td>
-                                  <td>
-                                    <span className={`fulfillment-pill ${ord.fulfillmentStatus.toLowerCase()}`}>
-                                      {ord.fulfillmentStatus}
-                                    </span>
-                                  </td>
-                                  <td style={{ textAlign: 'center' }}>
-                                    <button
-                                      className="order-view-btn"
-                                      onClick={() => setSelectedOrderModal(ord)}
-                                      title="View Order Details & Invoice"
-                                    >
-                                      <Eye size={15} />
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          )}
-                        </tbody>
-                      </table>
                     </div>
                   </div>
                 </div>
@@ -1868,10 +1661,10 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
             )}
 
             {/* ----------------------------------------------------------
-               TAB 3: /admin/products (DYNAMIC PRODUCTS CATALOG)
+               TAB 2: /admin/products (DYNAMIC PRODUCTS CATALOG)
                ---------------------------------------------------------- */}
             {activeNav === 'catalog' && (() => {
-              const activeSource = productsList.length > 0 ? productsList : products;
+              const activeSource = productsList;
               const filteredList = activeSource.filter((prod) => {
                 if (productCategoryFilter !== 'All') {
                   const catLower = productCategoryFilter.toLowerCase();
@@ -2747,192 +2540,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
             )}
 
             {/* ----------------------------------------------------------
-               TAB 5: /admin/customers (CUSTOMERS DIRECTORY)
-               ---------------------------------------------------------- */}
-            {activeNav === 'customers' && (
-              <div className="menu-manager-container">
-                <div className="overview-header-row mb-4">
-                  <div>
-                    <h2 className="overview-title">Registered Customers & Shoppers</h2>
-                    <p className="overview-subtitle">Manage customer profiles, order history, and VIP status</p>
-                  </div>
-                  <button
-                    className="menu-action-btn primary"
-                    onClick={() => showToast('Customer export prepared')}
-                  >
-                    <Download size={14} />
-                    <span>Export Shoppers</span>
-                  </button>
-                </div>
-
-                <div className="activities-table-card">
-                  <div className="table-responsive-box">
-                    <table className="oripio-table">
-                      <thead>
-                        <tr>
-                          <th>Customer ID</th>
-                          <th>Shopper Name</th>
-                          <th>Location</th>
-                          <th>Joined</th>
-                          <th>Orders Placed</th>
-                          <th>Lifetime Value</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {customersList.map((cust) => (
-                          <tr key={cust.id}>
-                            <td><code>#{cust.id}</code></td>
-                            <td>
-                              <div className="order-customer-cell">
-                                <div className="customer-avatar-initials" style={{ backgroundColor: cust.avatarBg }}>
-                                  {cust.name.charAt(0)}
-                                </div>
-                                <div>
-                                  <div className="customer-name">{cust.name}</div>
-                                  <div className="customer-meta">{cust.email}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>{cust.location}</td>
-                            <td>{cust.joinedDate}</td>
-                            <td><strong>{cust.ordersCount} Orders</strong></td>
-                            <td><strong style={{ color: '#901010' }}>{cust.totalSpent}</strong></td>
-                            <td>
-                              <span className="product-stock-tag ok">{cust.status}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ----------------------------------------------------------
-               TAB 6: /admin/analytics (SALES ANALYTICS)
-               ---------------------------------------------------------- */}
-            {activeNav === 'analytics' && (
-              <div className="menu-manager-container">
-                <div className="overview-header-row mb-4">
-                  <div>
-                    <h2 className="overview-title">Sales Analytics & Category Reports</h2>
-                    <p className="overview-subtitle">Merchandise sales volume, revenue breakdown, and growth factors</p>
-                  </div>
-                  <button
-                    className="menu-action-btn primary"
-                    onClick={() => setIsCategoryModalOpen(true)}
-                  >
-                    <Download size={14} />
-                    <span>Download Full Report</span>
-                  </button>
-                </div>
-
-                <div className="row g-3 g-xl-4 mb-4">
-                  <div className="col-12 col-lg-7">
-                    <div className="oripio-panel-card">
-                      <h3 className="panel-title">Revenue Trajectory</h3>
-                      <p className="panel-subtitle">Monthly breakdown comparison</p>
-
-                      <div className="cf-chart-canvas mt-3">
-                        <div className="cf-bars-track">
-                          {currentBars.map((item, idx) => (
-                            <div key={item.label} className="cf-bar-col" onClick={() => setActiveBarIndex(idx)}>
-                              <div
-                                className={`cf-bar-shape ${idx === activeBarIndex ? 'highlight' : ''}`}
-                                style={{ height: `${(item.value / 55) * 100}%` }}
-                              />
-                              <span className="cf-bar-name">{item.label}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-12 col-lg-5">
-                    <div className="oripio-panel-card">
-                      <h3 className="panel-title">Category Revenue Distribution</h3>
-                      <p className="panel-subtitle">Performance by pyjama departments</p>
-
-                      <div className="category-breakdown-list mt-3">
-                        {CATEGORY_BREAKDOWN.map((cat) => (
-                          <div key={cat.name} className="category-stat-row">
-                            <div className="category-stat-header">
-                              <span className="category-stat-name">{cat.name}</span>
-                              <span className="category-stat-amount">{cat.revenue} ({cat.percentage}%)</span>
-                            </div>
-                            <div className="category-progress-track">
-                              <div className="category-progress-fill" style={{ width: `${cat.percentage}%` }} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ----------------------------------------------------------
-               TAB 7: /admin/discounts (PROMOTIONS & VOUCHERS)
-               ---------------------------------------------------------- */}
-            {activeNav === 'discounts' && (
-              <div className="menu-manager-container">
-                <div className="overview-header-row mb-4">
-                  <div>
-                    <h2 className="overview-title">Discounts & Promo Codes</h2>
-                    <p className="overview-subtitle">Manage coupon codes, percentage discounts, and marketing campaigns</p>
-                  </div>
-                  <button
-                    className="menu-action-btn primary"
-                    onClick={() => showToast('Created promo code: AUTUMN25')}
-                  >
-                    <Plus size={14} />
-                    <span>Create Discount Code</span>
-                  </button>
-                </div>
-
-                <div className="activities-table-card">
-                  <div className="table-responsive-box">
-                    <table className="oripio-table">
-                      <thead>
-                        <tr>
-                          <th>Promo Code</th>
-                          <th>Discount Value</th>
-                          <th>Type</th>
-                          <th>Applies To</th>
-                          <th>Total Redemptions</th>
-                          <th>Expiry Date</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {discountsList.map((disc) => (
-                          <tr key={disc.id}>
-                            <td>
-                              <strong style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: '#901010', backgroundColor: '#FDF2F2', padding: '3px 8px', borderRadius: '6px' }}>
-                                {disc.code}
-                              </strong>
-                            </td>
-                            <td><strong>{disc.discount}</strong></td>
-                            <td>{disc.type}</td>
-                            <td>{disc.appliesTo}</td>
-                            <td>{disc.redemptions} Uses</td>
-                            <td>{disc.expiry}</td>
-                            <td><span className="payment-pill paid">{disc.status}</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ----------------------------------------------------------
-               TAB 8: /admin/settings (STORE SETTINGS)
+               TAB 4: /admin/settings (STORE SETTINGS)
                ---------------------------------------------------------- */}
             {activeNav === 'settings' && (
               <div className="menu-manager-container">
@@ -3754,169 +3362,7 @@ export function AdminDashboard({ activeTab = 'dashboard', onExit, onLogout }) {
       )}
 
 
-      {/* C. ORDER DETAILS / INVOICE MODAL */}
-      {selectedOrderModal && (
-        <div className="oripio-modal-backdrop" onClick={() => setSelectedOrderModal(null)}>
-          <div className="oripio-modal-box invoice-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="oripio-modal-header">
-              <div>
-                <h3 className="oripio-modal-title">Order #{selectedOrderModal.id}</h3>
-                <span className="order-modal-date">{selectedOrderModal.date} at {selectedOrderModal.time}</span>
-              </div>
-              <button className="oripio-modal-close" onClick={() => setSelectedOrderModal(null)}>
-                <X size={18} />
-              </button>
-            </div>
 
-            <div className="oripio-modal-body">
-              <div className="order-modal-grid">
-                <div className="order-summary-card">
-                  <span className="order-summary-label">CUSTOMER</span>
-                  <div className="order-summary-val">{selectedOrderModal.customer}</div>
-                  <div className="order-summary-sub">{selectedOrderModal.email}</div>
-                  <div className="order-summary-sub">{selectedOrderModal.location}</div>
-                </div>
-
-                <div className="order-summary-card">
-                  <span className="order-summary-label">PAYMENT STATUS</span>
-                  <div>
-                    <span className={`payment-pill ${selectedOrderModal.paymentStatus.toLowerCase()}`}>
-                      {selectedOrderModal.paymentStatus}
-                    </span>
-                  </div>
-                  <div className="order-summary-sub mt-2">Method: Credit Card (Stripe)</div>
-                </div>
-
-                <div className="order-summary-card">
-                  <span className="order-summary-label">FULFILLMENT</span>
-                  <div>
-                    <span className={`fulfillment-pill ${selectedOrderModal.fulfillmentStatus.toLowerCase()}`}>
-                      {selectedOrderModal.fulfillmentStatus}
-                    </span>
-                  </div>
-                  <div className="order-summary-sub mt-2">Royal Mail Tracked 24</div>
-                </div>
-              </div>
-
-              <div className="invoice-items-card">
-                <h4 className="invoice-section-title">Items Ordered</h4>
-                <div className="invoice-item-row">
-                  <div>
-                    <strong>{selectedOrderModal.itemSummary}</strong>
-                    <div className="invoice-item-sku">SKU: TN-PYJ-2026 • 100% Recycled Satin</div>
-                  </div>
-                  <div className="invoice-item-price">
-                    {selectedOrderModal.amount}
-                  </div>
-                </div>
-              </div>
-
-              <div className="invoice-totals-box">
-                <div className="invoice-totals-row">
-                  <span>Subtotal</span>
-                  <span>{selectedOrderModal.amount}</span>
-                </div>
-                <div className="invoice-totals-row">
-                  <span>Standard UK Shipping</span>
-                  <span style={{ color: '#16A34A' }}>Free (Orders over £40)</span>
-                </div>
-                <div className="invoice-totals-row">
-                  <span>VAT Included (20%)</span>
-                  <span>Included</span>
-                </div>
-                <div className="invoice-totals-row total">
-                  <strong>Total Paid</strong>
-                  <strong className="invoice-final-amount">{selectedOrderModal.amount}</strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="oripio-modal-footer order-modal-footer">
-              <div className="fulfillment-actions-group">
-                {selectedOrderModal.fulfillmentStatus !== 'Delivered' && (
-                  <button
-                    className="oripio-btn-secondary"
-                    onClick={() => handleUpdateOrderStatus(selectedOrderModal.id, 'Shipped')}
-                  >
-                    <Truck size={14} />
-                    <span>Mark as Shipped</span>
-                  </button>
-                )}
-                {selectedOrderModal.fulfillmentStatus !== 'Delivered' && (
-                  <button
-                    className="oripio-btn-primary"
-                    onClick={() => handleUpdateOrderStatus(selectedOrderModal.id, 'Delivered')}
-                  >
-                    <CheckCircle2 size={14} />
-                    <span>Mark as Delivered</span>
-                  </button>
-                )}
-              </div>
-              <button
-                className="oripio-btn-secondary"
-                onClick={() => {
-                  showToast(`Printed packaging slip for #${selectedOrderModal.id}`);
-                }}
-              >
-                <Printer size={14} />
-                <span>Print Slip</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* D. CATEGORY SALES BREAKDOWN MODAL */}
-      {isCategoryModalOpen && (
-        <div className="oripio-modal-backdrop" onClick={() => setIsCategoryModalOpen(false)}>
-          <div className="oripio-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="oripio-modal-header">
-              <h3 className="oripio-modal-title">Sales by Category Breakdown</h3>
-              <button className="oripio-modal-close" onClick={() => setIsCategoryModalOpen(false)}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className="oripio-modal-body">
-              <div className="category-modal-summary">
-                <div className="category-total-rev">£48,620.50</div>
-                <div className="category-total-label">Total Store Revenue ({selectedDateRange})</div>
-              </div>
-
-              <div className="category-breakdown-list">
-                {CATEGORY_BREAKDOWN.map((cat) => (
-                  <div key={cat.name} className="category-stat-row">
-                    <div className="category-stat-header">
-                      <span className="category-stat-name">{cat.name}</span>
-                      <span className="category-stat-amount">{cat.revenue} ({cat.percentage}%)</span>
-                    </div>
-                    <div className="category-progress-track">
-                      <div
-                        className="category-progress-fill"
-                        style={{ width: `${cat.percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="oripio-modal-footer">
-              <button className="oripio-btn-secondary" onClick={() => setIsCategoryModalOpen(false)}>
-                Close
-              </button>
-              <button
-                className="oripio-btn-primary"
-                onClick={() => {
-                  setIsCategoryModalOpen(false);
-                  showToast('Exported Category Sales Report as CSV');
-                }}
-              >
-                <Download size={14} />
-                <span>Export Report</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* E. MERCHANT SUPPORT MODAL */}
       {isHelpModalOpen && (

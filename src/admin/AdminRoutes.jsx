@@ -77,31 +77,25 @@ export function AdminRoutes() {
       <Route path="dashboard" element={renderProtectedTab('dashboard')} />
       <Route path="overview" element={<Navigate to="/admin/dashboard" replace />} />
 
-      {/* 3. Orders Route */}
-      <Route path="orders" element={renderProtectedTab('orders')} />
-
-      {/* 4. Products / Catalog Route */}
+      {/* 3. Products / Catalog Route (MySQL API) */}
       <Route path="products" element={renderProtectedTab('catalog')} />
       <Route path="catalog" element={<Navigate to="/admin/products" replace />} />
 
-      {/* 5. Website Menus & Submenus Route */}
+      {/* 4. Website Menus & Submenus Route (MySQL API) */}
       <Route path="menus" element={renderProtectedTab('menu')} />
       <Route path="navigation" element={<Navigate to="/admin/menus" replace />} />
 
-      {/* 6. Customers Route */}
-      <Route path="customers" element={renderProtectedTab('customers')} />
+      {/* 5. Hero Banners Route (MySQL API) */}
+      <Route path="banners" element={renderProtectedTab('banners')} />
 
-      {/* 7. Sales Analytics Route */}
-      <Route path="analytics" element={renderProtectedTab('analytics')} />
-
-      {/* 8. Discounts & Promos Route */}
-      <Route path="discounts" element={renderProtectedTab('discounts')} />
-
-      {/* 9. Store Settings Route */}
+      {/* 6. Store Settings Route (MySQL API) */}
       <Route path="settings" element={renderProtectedTab('settings')} />
 
-      {/* 10. Hero Banners Route */}
-      <Route path="banners" element={renderProtectedTab('banners')} />
+      {/* Redirect obsolete dummy routes to dashboard */}
+      <Route path="orders" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="customers" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="analytics" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="discounts" element={<Navigate to="/admin/dashboard" replace />} />
 
       {/* Root /admin route */}
       <Route 
